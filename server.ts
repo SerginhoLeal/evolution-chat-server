@@ -223,11 +223,10 @@ io.on("connection", (socket) => {
 
   // Listen for chatMessage
   socket.on("sendMessage", (data) => {
-    const user = users.find(u => u.id === data.userId);
 
     io.to(data.room).emit("message", {
-      number: user.number,
-      name: user.name,
+      number: data.number,
+      name: data.name,
       message: data.message
     });
   });

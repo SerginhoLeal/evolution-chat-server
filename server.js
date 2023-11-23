@@ -169,10 +169,9 @@ io.on("connection", (socket2) => {
     socket2.join(room);
   });
   socket2.on("sendMessage", (data) => {
-    const user = users.find((u) => u.id === data.userId);
     io.to(data.room).emit("message", {
-      number: user.number,
-      name: user.name,
+      number: data.number,
+      name: data.name,
       message: data.message
     });
   });
