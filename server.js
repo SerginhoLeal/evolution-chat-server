@@ -30,7 +30,8 @@ var import_socket2 = require("socket.io-client");
 var import_client = require("@prisma/client");
 var app = (0, import_express.default)();
 var prisma = new import_client.PrismaClient();
-var socket = (0, import_socket2.io)("https://evolution-chat.onrender.com", { transports: ["websocket"] });
+var TEST_URL = "https://evolution-chat.onrender.com";
+var socket = (0, import_socket2.io)(TEST_URL, { transports: ["websocket"] });
 app.use(import_express.default.json({ limit: "1gb" }));
 app.use((0, import_cors.default)());
 var users = [];
@@ -111,42 +112,39 @@ app.post("/api/webhook", async (request, reply) => {
   const slice_sender_two = body.sender.slice(4, 12);
   const slice_target_one = body.data.key.remoteJid.slice(0, 4);
   const slice_target_two = body.data.key.remoteJid.slice(4, 12);
-  if (`${slice_sender_one}${slice_sender_two}` === "553175564133" || `${slice_sender_one}${slice_sender_two}` === "5531984106645") {
-    if (body.event === "messages.upsert") {
-      const format = (value) => {
-        if (value === "5531975564133") {
-          return "5fe9c787-4610-4132-998d-186f66f6129d";
-        }
-        ;
-        if (value === "5531984106645") {
-          return "02a82085-93ea-4e4e-8f39-a73cb2812f11";
-        }
-        ;
-        return "";
-      };
-      const find = await prisma.chat.findFirst({
-        where: {
-          OR: [
-            {
-              first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-              second_member_id: format(`${slice_target_one}9${slice_target_two}`)
-            },
-            {
-              first_member_id: format(`${slice_target_one}9${slice_target_two}`),
-              second_member_id: format(`${slice_sender_one}9${slice_sender_two}`)
-            }
-          ]
-        }
-      });
-      socket.emit("sendServerMessage", {
-        room: find.id,
-        userId: format(`${slice_target_one}9${slice_target_two}`),
-        message: body.data.message.conversation
-      });
-      return reply.status(201).send(find);
-    }
-  } else {
-    return reply.status(201).send({ message: "Voc\xEA n\xE3o tem Permiss\xE3o para enviar mensagens aqui" });
+  if (body.event === "messages.upsert") {
+    const format = (value) => {
+      if (value === "5531975564133") {
+        return "5fe9c787-4610-4132-998d-186f66f6129d";
+      }
+      ;
+      if (value === "5531984106645") {
+        return "02a82085-93ea-4e4e-8f39-a73cb2812f11";
+      }
+      ;
+      return "";
+    };
+    const find = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          {
+            first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
+            second_member_id: format(`${slice_target_one}9${slice_target_two}`)
+          },
+          {
+            first_member_id: format(`${slice_target_one}9${slice_target_two}`),
+            second_member_id: format(`${slice_sender_one}9${slice_sender_two}`)
+          }
+        ]
+      }
+    });
+    socket.emit("sendServerMessage", {
+      room: find.id,
+      number: `${slice_target_one}9${slice_target_two}`,
+      name: body.data.pushName,
+      message: body.data.message.conversation
+    });
+    return reply.status(201).send(find);
   }
   return reply.status(201).send({ message: "success" });
 });
@@ -178,10 +176,9 @@ io.on("connection", (socket2) => {
     });
   });
   socket2.on("sendServerMessage", (data) => {
-    const user = users.find((u) => u.id === data.userId);
     io.to(data.room).emit("message", {
-      number: user.number,
-      name: user.name,
+      number: data.number,
+      name: data.name,
       message: data.message
     });
   });

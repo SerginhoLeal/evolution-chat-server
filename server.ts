@@ -9,8 +9,8 @@ import { PrismaClient } from '@prisma/client';
 const app = express();
 const prisma = new PrismaClient()
 
-// const TEST_URL = 'https://evolution-chat.onrender.com';
-const TEST_URL = 'http://localhost:3000';
+const TEST_URL = 'https://evolution-chat.onrender.com';
+// const TEST_URL = 'http://localhost:3000';
 
 const socket = SocketIo(TEST_URL, { transports: ['websocket'] })
 
