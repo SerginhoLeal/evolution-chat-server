@@ -8,7 +8,11 @@ import { PrismaClient } from '@prisma/client';
 
 const app = express();
 const prisma = new PrismaClient()
-const socket = SocketIo('https://evolution-chat.onrender.com', { transports: ['websocket'] })
+
+// const TEST_URL = 'https://evolution-chat.onrender.com';
+const TEST_URL = 'http://localhost:3000';
+
+const socket = SocketIo(TEST_URL, { transports: ['websocket'] })
 
 app.use(express.json({ limit: '1gb' }));
 app.use(cors());
@@ -138,12 +142,7 @@ app.post('/api/webhook', async(request, reply) => {
   const slice_target_one = body.data.key.remoteJid.slice(0, 4);
   const slice_target_two = body.data.key.remoteJid.slice(4, 12);
 
-  if (
-      `${slice_sender_one}${slice_sender_two}` === '553175564133' ||
-      `${slice_sender_one}${slice_sender_two}` === '5531984106645'
-    ) {
-    // send message
-    if(body.event === 'messages.upsert'){
+  if (body.event === 'messages.upsert'){
 
       const format = (value: string) => {
         if (value === '5531975564133') {
@@ -173,16 +172,14 @@ app.post('/api/webhook', async(request, reply) => {
 
       socket.emit('sendServerMessage', {
         room: find.id,
-        userId: format(`${slice_target_one}9${slice_target_two}`),
+        number: `${slice_target_one}9${slice_target_two}`,
+        name: body.data.pushName,
         message: body.data.message.conversation
       })
 
       return reply.status(201).send(find);
 
     }
-  } else {
-    return reply.status(201).send({ message: 'Você não tem Permissão para enviar mensagens aqui' })
-  }
 
   return reply.status(201).send({ message: 'success' })
 })
@@ -234,11 +231,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendServerMessage", (data) => {
-    const user = users.find(u => u.id === data.userId);
-    
+
     io.to(data.room).emit("message", {
-      number: user.number,
-      name: user.name,
+      number: data.number,
+      name: data.name,
       message: data.message
     });
   });
