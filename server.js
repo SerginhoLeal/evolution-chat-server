@@ -108,6 +108,7 @@ app.post("/api/send-message", async (request, reply) => {
 });
 app.post("/api/webhook", async (request, reply) => {
   const body = request.body;
+  console.log(body);
   const slice_sender_one = body.sender.slice(0, 4);
   const slice_sender_two = body.sender.slice(4, 12);
   const slice_target_one = body.data.key.remoteJid.slice(0, 4);
@@ -139,7 +140,7 @@ app.post("/api/webhook", async (request, reply) => {
       }
     });
     socket.emit("sendServerMessage", {
-      room: find.id,
+      room: find?.id,
       number: `${slice_target_one}9${slice_target_two}`,
       name: body.data.pushName,
       message: body.data.message.conversation
