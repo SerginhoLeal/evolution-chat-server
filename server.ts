@@ -8,7 +8,7 @@ import { PrismaClient } from '@prisma/client';
 
 const app = express();
 const prisma = new PrismaClient()
-const socket = SocketIo('http://localhost:3000', { transports: ['websocket'] })
+const socket = SocketIo('https://evolution-chat.onrender.com', { transports: ['websocket'] })
 
 app.use(express.json({ limit: '1gb' }));
 app.use(cors());
