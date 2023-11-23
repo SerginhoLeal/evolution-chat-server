@@ -111,7 +111,7 @@ app.post("/api/webhook", async (request, reply) => {
   const slice_sender_two = body.sender.slice(4, 12);
   const slice_target_one = body.data.key.remoteJid.slice(0, 4);
   const slice_target_two = body.data.key.remoteJid.slice(4, 12);
-  if (`${slice_sender_one}9${slice_sender_two}` === "553175564133" || `${slice_sender_one}9${slice_sender_two}` === "5531984106645") {
+  if (`${slice_sender_one}${slice_sender_two}` === "553175564133" || `${slice_sender_one}${slice_sender_two}` === "5531984106645") {
     if (body.event === "messages.upsert") {
       const format = (value) => {
         if (value === "5531975564133") {
