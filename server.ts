@@ -34,7 +34,7 @@ let chats = [
       }
     ]
   },
-  { // me && laura
+  { // me && luiz
     room_id: 'clpcngx0h00018b4iw8bk1cgg',
     destination: 'db',
     first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
@@ -44,6 +44,34 @@ let chats = [
         number: '553172363441',
         name: 'luiz',
         message: 'salve seu gay',
+        send_at: '2023-11-22 17:26:06'
+      }
+    ]
+  },
+  { // me && me
+    room_id: 'clpcnlfsl0001xexrcqdwrlx0',
+    destination: 'db',
+    first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    second_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    chat_messages: [
+      {
+        number: '553172363441',
+        name: 'luiz',
+        message: 'Teste',
+        send_at: '2023-11-22 17:26:06'
+      }
+    ]
+  },
+  { // me && marco
+    room_id: '553184106645',
+    destination: 'db',
+    first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    second_member_id: "5f1aaf98-740a-466f-aaab-2c74dbfc7004",
+    chat_messages: [
+      {
+        number: '553172363441',
+        name: 'luiz',
+        message: 'Salve marco',
         send_at: '2023-11-22 17:26:06'
       }
     ]
@@ -99,6 +127,7 @@ app.get('/api/get-chat', async(request, reply) => {
   })
     .then(success => {
       const find = chats.find(chat => chat.room_id === success.id)
+      console.log(success);
       return reply.status(201).json(find)
     })
     .catch(error => reply.status(404).end({ error }))
@@ -358,7 +387,10 @@ app.post('/api/webhook', async(request, reply) => {
       });
   
       if (!find) return reply.status(404).send({ message: 'not found' });
-  
+      // console.log(find?.id);
+      // console.log(target_format);
+      // console.log(body.data.pushName);
+      // console.log(body.data.message.conversation);
       socket.emit('sendServerMessage', {
         room: find?.id,
         number: target_format,
@@ -447,7 +479,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendServerMessage", (data) => {
-
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,
