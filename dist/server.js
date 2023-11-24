@@ -159,7 +159,7 @@ app.post("/api/create-chat", async (request, reply) => {
 app.post("/api/send-message", async (request, reply) => {
   const { room, userId } = request.query;
   const { message } = request.body;
-  socket.emit("sendServerMessage", { room, userId, message });
+  socket.emit("sendMessage", { room, userId, message });
   const data = {
     room,
     userId,
@@ -227,7 +227,7 @@ app.post("/api/webhook", async (request, reply) => {
       });
       if (!find)
         return reply.status(404).send({ message: "not found" });
-      socket.emit("sendServerMessage", {
+      socket.emit("sendMessage", {
         room: find?.id,
         number: sender_format,
         name: body.data.pushName,
@@ -259,7 +259,6 @@ io.on("connection", (socket2) => {
     socket2.join(room);
   });
   socket2.on("sendMessage", (data) => {
-    console.log(data);
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,
