@@ -200,7 +200,7 @@ app.post('/api/webhook', async(request, reply) => {
   return reply.status(201).send({ body })
 })
 
-const express_server = app.listen({ port: 3000 })
+const express_server = app.listen({ port: process.env.PORT || 3000 })
 
 const io = new Server(express_server, {
   cors: {

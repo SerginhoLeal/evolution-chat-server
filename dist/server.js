@@ -142,7 +142,7 @@ app.post("/api/webhook", async (request, reply) => {
   console.log(body);
   return reply.status(201).send({ body });
 });
-var express_server = app.listen({ port: 3e3 });
+var express_server = app.listen({ port: process.env.PORT || 3e3 });
 var io = new import_socket.Server(express_server, {
   cors: {
     origin: "*"
