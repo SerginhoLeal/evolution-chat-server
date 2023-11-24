@@ -30,7 +30,7 @@ var import_socket2 = require("socket.io-client");
 var import_client = require("@prisma/client");
 var app = (0, import_express.default)();
 var prisma = new import_client.PrismaClient();
-var TEST_URL = "http://localhost:3000";
+var TEST_URL = "https://evolution-chat.onrender.com";
 var socket = (0, import_socket2.io)(TEST_URL, { transports: ["websocket"] });
 app.use(import_express.default.json({ limit: "1gb" }));
 app.use((0, import_cors.default)());
@@ -135,7 +135,6 @@ app.get("/api/get-chat", async (request, reply) => {
     }
   }).then((success) => {
     const find = chats.find((chat) => chat.room_id === success.id);
-    console.log(success);
     return reply.status(201).json(find);
   }).catch((error) => reply.status(404).end({ error }));
 });
@@ -203,7 +202,7 @@ app.post("/api/webhook", async (request, reply) => {
         return reply.status(404).send({ message: "not found" });
       socket.emit("sendServerMessage", {
         room: find?.id,
-        number: target_format,
+        number: sender_format,
         name: body.data.pushName,
         message: body.data.message.conversation
       });
@@ -229,7 +228,7 @@ app.post("/api/webhook", async (request, reply) => {
         return reply.status(404).send({ message: "not found" });
       socket.emit("sendServerMessage", {
         room: find?.id,
-        number: target_format,
+        number: sender_format,
         name: body.data.pushName,
         message: body.data.message.conversation
       });
@@ -266,6 +265,7 @@ io.on("connection", (socket2) => {
     });
   });
   socket2.on("sendServerMessage", (data) => {
+    console.log(data);
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,

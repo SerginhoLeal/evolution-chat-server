@@ -9,8 +9,8 @@ import { PrismaClient } from '@prisma/client';
 const app = express();
 const prisma = new PrismaClient()
 
-// const TEST_URL = 'https://evolution-chat.onrender.com';
-const TEST_URL = 'http://localhost:3000';
+const TEST_URL = 'https://evolution-chat.onrender.com';
+// const TEST_URL = 'http://localhost:3000';
 
 const socket = SocketIo(TEST_URL, { transports: ['websocket'] })
 
@@ -56,7 +56,7 @@ let chats = [
     chat_messages: [
       {
         number: '553172363441',
-        name: 'luiz',
+        name: 'serginho',
         message: 'Teste',
         send_at: '2023-11-22 17:26:06'
       }
@@ -127,7 +127,6 @@ app.get('/api/get-chat', async(request, reply) => {
   })
     .then(success => {
       const find = chats.find(chat => chat.room_id === success.id)
-      console.log(success);
       return reply.status(201).json(find)
     })
     .catch(error => reply.status(404).end({ error }))
@@ -391,9 +390,9 @@ app.post('/api/webhook', async(request, reply) => {
       // console.log(target_format);
       // console.log(body.data.pushName);
       // console.log(body.data.message.conversation);
-      socket.emit('sendServerMessage', {
+      socket.emit('sendMessage', {
         room: find?.id,
-        number: target_format,
+        number: sender_format,
         name: body.data.pushName,
         message: body.data.message.conversation
       })
@@ -421,7 +420,7 @@ app.post('/api/webhook', async(request, reply) => {
   
       socket.emit('sendServerMessage', {
         room: find?.id,
-        number: target_format,
+        number: sender_format,
         name: body.data.pushName,
         message: body.data.message.conversation
       })
@@ -470,15 +469,7 @@ io.on("connection", (socket) => {
 
   // Listen for chatMessage
   socket.on("sendMessage", (data) => {
-
-    io.to(data.room).emit("message", {
-      number: data.number,
-      name: data.name,
-      message: data.message
-    });
-  });
-
-  socket.on("sendServerMessage", (data) => {
+    console.log(data);
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,
