@@ -361,16 +361,17 @@ app.post('/api/webhook', async(request, reply) => {
 
     return ''
   };
-
-  const sender_format = body.sender.replace('@s.whatsapp.net', '');
-  const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
-
-  if (sender_format === undefined || target_format === undefined) return null;
+  
+  console.log(body);
 
   if (
-    sender_format === '553175564133' || sender_format === '553184106645' ||
-    sender_format === '553171868572' || sender_format === '553172363441'
-  ) {
+    body.sender === '553175564133@s.whatsapp.net' || body.sender === '553184106645@s.whatsapp.net' ||
+    body.sender === '553171868572@s.whatsapp.net' || body.sender === '553172363441@s.whatsapp.net'
+    ) {
+
+    const sender_format = body.sender.replace('@s.whatsapp.net', '');
+    const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
+
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
       const find = await prisma.chat.findFirst({
         where: {
