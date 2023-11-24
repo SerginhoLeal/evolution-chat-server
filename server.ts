@@ -41,7 +41,7 @@ let chats = [
     second_member_id: "ecb500ed-4128-4f46-851f-61c0ed43f4f9",
     chat_messages: [
       {
-        number: '553172363441',
+        number: '553192363441',
         name: 'luiz',
         message: 'salve seu gay',
         send_at: '2023-11-22 17:26:06'
@@ -55,7 +55,7 @@ let chats = [
     second_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
     chat_messages: [
       {
-        number: '553172363441',
+        number: '553192363441',
         name: 'serginho',
         message: 'Teste',
         send_at: '2023-11-22 17:26:06'
@@ -69,7 +69,7 @@ let chats = [
     second_member_id: "5f1aaf98-740a-466f-aaab-2c74dbfc7004",
     chat_messages: [
       {
-        number: '553172363441',
+        number: '553192363441',
         name: 'luiz',
         message: 'Salve marco',
         send_at: '2023-11-22 17:26:06'
@@ -357,16 +357,14 @@ app.post('/api/webhook', async(request, reply) => {
     if (value === '553175564133') return '05abe21d-3049-43f8-a842-5fb2af40d8f1';
     if (value === '553184106645') return '5f1aaf98-740a-466f-aaab-2c74dbfc7004';
     if (value === '553171868572') return 'badd34de-ae07-4c0a-9c68-aaf17f94f32d';
-    if (value === '553172363441') return 'ecb500ed-4128-4f46-851f-61c0ed43f4f9';
+    if (value === '553192363441') return 'ecb500ed-4128-4f46-851f-61c0ed43f4f9';
 
     return ''
   };
-  
-  console.log(body);
 
   if (
     body.sender === '553175564133@s.whatsapp.net' || body.sender === '553184106645@s.whatsapp.net' ||
-    body.sender === '553171868572@s.whatsapp.net' || body.sender === '553172363441@s.whatsapp.net'
+    body.sender === '553171868572@s.whatsapp.net' || body.sender === '553192363441@s.whatsapp.net'
     ) {
 
     const sender_format = body.sender.replace('@s.whatsapp.net', '');
