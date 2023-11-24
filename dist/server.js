@@ -30,11 +30,43 @@ var import_socket2 = require("socket.io-client");
 var import_client = require("@prisma/client");
 var app = (0, import_express.default)();
 var prisma = new import_client.PrismaClient();
-var TEST_URL = "https://evolution-chat.onrender.com";
+var TEST_URL = "http://localhost:3000";
 var socket = (0, import_socket2.io)(TEST_URL, { transports: ["websocket"] });
 app.use(import_express.default.json({ limit: "1gb" }));
 app.use((0, import_cors.default)());
 var users = [];
+var chats = [
+  {
+    // me && laura
+    room_id: "clpclotx80001edbnuk9yzz9n",
+    destination: "db",
+    first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    second_member_id: "badd34de-ae07-4c0a-9c68-aaf17f94f32d",
+    chat_messages: [
+      {
+        number: "553175564133",
+        name: "serginho",
+        message: "bom dia, amor \u2764",
+        send_at: "2023-11-22 17:26:06"
+      }
+    ]
+  },
+  {
+    // me && laura
+    room_id: "clpcngx0h00018b4iw8bk1cgg",
+    destination: "db",
+    first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    second_member_id: "ecb500ed-4128-4f46-851f-61c0ed43f4f9",
+    chat_messages: [
+      {
+        number: "553172363441",
+        name: "luiz",
+        message: "salve seu gay",
+        send_at: "2023-11-22 17:26:06"
+      }
+    ]
+  }
+];
 app.post("/api/login-user", async (request, reply) => {
   const { name, number } = request.body;
   return prisma.user.findFirst({
@@ -72,26 +104,25 @@ app.get("/api/get-chat", async (request, reply) => {
       ]
     }
   }).then((success) => {
-    const adding_message = {
-      ...success,
-      chat_messages: [
-        {
-          number: "553197556413",
-          name: "sergio leal",
-          message: "Me contrata ai \u{1F44D}"
-        }
-      ]
-    };
-    return reply.status(201).json(adding_message);
+    const find = chats.find((chat) => chat.room_id === success.id);
+    return reply.status(201).json(find);
   }).catch((error) => reply.status(404).end({ error }));
 });
-app.post("/api/create-chat", async (request, reply) => {
+app.post("/api/create-instance", async (request, reply) => {
   const { user_id, target_id } = request.query;
+  return await prisma.instance.create({
+    data: {
+      instance_name: "whatsapp_instance_sergio"
+    }
+  }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+});
+app.post("/api/create-chat", async (request, reply) => {
+  const { user_id, target_id, instance_id } = request.query;
   return await prisma.chat.create({
     data: {
       first_member_id: `${user_id}`,
       second_member_id: `${target_id}`,
-      number: "0"
+      instance_id: `${instance_id}`
     }
   }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
 });
@@ -109,45 +140,7 @@ app.post("/api/send-message", async (request, reply) => {
 app.post("/api/webhook", async (request, reply) => {
   const body = request.body;
   console.log(body);
-  const slice_sender_one = body.sender.slice(0, 4);
-  const slice_sender_two = body.sender.slice(4, 12);
-  const slice_target_one = body.data.key.remoteJid.slice(0, 4);
-  const slice_target_two = body.data.key.remoteJid.slice(4, 12);
-  if (body.event === "messages.upsert") {
-    const format = (value) => {
-      if (value === "5531975564133") {
-        return "5fe9c787-4610-4132-998d-186f66f6129d";
-      }
-      ;
-      if (value === "5531984106645") {
-        return "02a82085-93ea-4e4e-8f39-a73cb2812f11";
-      }
-      ;
-      return "";
-    };
-    const find = await prisma.chat.findFirst({
-      where: {
-        OR: [
-          {
-            first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-            second_member_id: format(`${slice_target_one}9${slice_target_two}`)
-          },
-          {
-            first_member_id: format(`${slice_target_one}9${slice_target_two}`),
-            second_member_id: format(`${slice_sender_one}9${slice_sender_two}`)
-          }
-        ]
-      }
-    });
-    socket.emit("sendServerMessage", {
-      room: find?.id,
-      number: `${slice_target_one}9${slice_target_two}`,
-      name: body.data.pushName,
-      message: body.data.message.conversation
-    });
-    return reply.status(201).send(find);
-  }
-  return reply.status(201).send({ message: "success" });
+  return reply.status(201).send({ body });
 });
 var express_server = app.listen({ port: 3e3 });
 var io = new import_socket.Server(express_server, {

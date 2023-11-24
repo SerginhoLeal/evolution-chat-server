@@ -13,20 +13,31 @@ datasource db {
 model User {
   id         String   @id @default(uuid())
   name       String
-  number     String
+  number     String   @unique
   created_at DateTime @default(now())
 
   @@map("users")
 }
 
+model Instance {
+  id            String @id @default(uuid())
+  instance_name String @unique
+
+  Chat Chat[]
+
+  @@map("instances")
+}
+
 model Chat {
   id               String   @id @default(cuid())
+  instance_id      String
   first_member_id  String
   second_member_id String
-  number           String
   created_at       DateTime @default(now())
 
   messages Message[]
+
+  instances Instance @relation(fields: [instance_id], references: [id], onDelete: Cascade)
 
   @@map("chats")
 }

@@ -7,12 +7,19 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
+CREATE TABLE "instances" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "instance_name" TEXT NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "chats" (
     "id" TEXT NOT NULL PRIMARY KEY,
+    "instance_id" TEXT NOT NULL,
     "first_member_id" TEXT NOT NULL,
     "second_member_id" TEXT NOT NULL,
-    "number" TEXT NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "chats_instance_id_fkey" FOREIGN KEY ("instance_id") REFERENCES "instances" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -24,4 +31,7 @@ CREATE TABLE "messages" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "chats_first_member_id_key" ON "chats"("first_member_id");
+CREATE UNIQUE INDEX "users_number_key" ON "users"("number");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "instances_instance_name_key" ON "instances"("instance_name");

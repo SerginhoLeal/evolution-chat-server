@@ -9,8 +9,8 @@ import { PrismaClient } from '@prisma/client';
 const app = express();
 const prisma = new PrismaClient()
 
-const TEST_URL = 'https://evolution-chat.onrender.com';
-// const TEST_URL = 'http://localhost:3000';
+// const TEST_URL = 'https://evolution-chat.onrender.com';
+const TEST_URL = 'http://localhost:3000';
 
 const socket = SocketIo(TEST_URL, { transports: ['websocket'] })
 
@@ -20,19 +20,30 @@ app.use(cors());
 let users: any[] = [];
 
 let chats = [
-  { // Songyuxinh && Adriano
-    room_id: '128e1d3d-f6c6-401d-851f-1f5c94623b6e',
+  { // me && laura
+    room_id: 'clpclotx80001edbnuk9yzz9n',
     destination: 'db',
-    members: [
-      '9615aee0-b087-493a-9c89-07cd1ddc1b66',
-      'b738bf21-78ce-4b0c-a18f-eaafb2dd5db0'
-    ],
+    first_member_id: '05abe21d-3049-43f8-a842-5fb2af40d8f1',
+    second_member_id: 'badd34de-ae07-4c0a-9c68-aaf17f94f32d',
     chat_messages: [
       {
-        message_id: 1,
-        nickname: 'songyuxinh',
-        number: '5531975564133',
-        message: 'quem é você na fila do pão',
+        number: '553175564133',
+        name: 'serginho',
+        message: 'bom dia, amor ❤',
+        send_at: '2023-11-22 17:26:06'
+      }
+    ]
+  },
+  { // me && laura
+    room_id: 'clpcngx0h00018b4iw8bk1cgg',
+    destination: 'db',
+    first_member_id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
+    second_member_id: "ecb500ed-4128-4f46-851f-61c0ed43f4f9",
+    chat_messages: [
+      {
+        number: '553172363441',
+        name: 'luiz',
+        message: 'salve seu gay',
         send_at: '2023-11-22 17:26:06'
       }
     ]
@@ -87,29 +98,32 @@ app.get('/api/get-chat', async(request, reply) => {
     },
   })
     .then(success => {
-      const adding_message = {
-        ...success,
-        chat_messages: [
-          {
-            number: '553197556413',
-            name: 'sergio leal',
-            message: 'Me contrata ai 👍'
-          }
-        ]
-      }
-      return reply.status(201).json(adding_message)
+      const find = chats.find(chat => chat.room_id === success.id)
+      return reply.status(201).json(find)
     })
     .catch(error => reply.status(404).end({ error }))
 });
 
-app.post('/api/create-chat', async(request, reply) => {
+app.post('/api/create-instance', async(request, reply) => {
   const { user_id, target_id } = request.query;
+
+  return await prisma.instance.create({
+    data: {
+      instance_name: 'whatsapp_instance_sergio'
+    }
+  })
+    .then(success => reply.status(201).json(success))
+    .catch(error => reply.status(404).end({ error }))
+})
+
+app.post('/api/create-chat', async(request, reply) => {
+  const { user_id, target_id, instance_id } = request.query;
 
   return await prisma.chat.create({
     data: {
       first_member_id: `${user_id}`,
       second_member_id: `${target_id}`,
-      number: '0',
+      instance_id: `${instance_id}`
     }
   })
     .then(success => reply.status(201).json(success))
@@ -136,54 +150,54 @@ app.post('/api/webhook', async(request, reply) => {
 
   console.log(body);
 
-  // numero de quem enviou
-  const slice_sender_one = body.sender.slice(0, 4);
-  const slice_sender_two = body.sender.slice(4, 12);
+  // // numero de quem enviou
+  // const slice_sender_one = body.sender.slice(0, 4);
+  // const slice_sender_two = body.sender.slice(4, 12);
 
-  // numero de quem recebeu
-  const slice_target_one = body.data.key.remoteJid.slice(0, 4);
-  const slice_target_two = body.data.key.remoteJid.slice(4, 12);
+  // // numero de quem recebeu
+  // const slice_target_one = body.data.key.remoteJid.slice(0, 4);
+  // const slice_target_two = body.data.key.remoteJid.slice(4, 12);
 
-  if (body.event === 'messages.upsert'){
+  // if (body.event === 'messages.upsert'){
 
-      const format = (value: string) => {
-        if (value === '5531975564133') {
-          return '5fe9c787-4610-4132-998d-186f66f6129d'
-        };
-        if (value === '5531984106645') {
-          return '02a82085-93ea-4e4e-8f39-a73cb2812f11'
-        };
+  //     const format = (value: string) => {
+  //       if (value === '5531975564133') {
+  //         return '5fe9c787-4610-4132-998d-186f66f6129d'
+  //       };
+  //       if (value === '5531984106645') {
+  //         return '02a82085-93ea-4e4e-8f39-a73cb2812f11'
+  //       };
 
-        return ''
-      }
+  //       return ''
+  //     }
 
-      const find = await prisma.chat.findFirst({
-        where: {
-          OR: [
-            {
-              first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-              second_member_id: format(`${slice_target_one}9${slice_target_two}`),
-            },
-            {
-              first_member_id: format(`${slice_target_one}9${slice_target_two}`),
-              second_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-            }
-          ]
-        }
-      });
+  //     const find = await prisma.chat.findFirst({
+  //       where: {
+  //         OR: [
+  //           {
+  //             first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
+  //             second_member_id: format(`${slice_target_one}9${slice_target_two}`),
+  //           },
+  //           {
+  //             first_member_id: format(`${slice_target_one}9${slice_target_two}`),
+  //             second_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
+  //           }
+  //         ]
+  //       }
+  //     });
 
-      socket.emit('sendServerMessage', {
-        room: find?.id,
-        number: `${slice_target_one}9${slice_target_two}`,
-        name: body.data.pushName,
-        message: body.data.message.conversation
-      })
+  //     socket.emit('sendServerMessage', {
+  //       room: find?.id,
+  //       number: `${slice_target_one}9${slice_target_two}`,
+  //       name: body.data.pushName,
+  //       message: body.data.message.conversation
+  //     })
 
-      return reply.status(201).send(find);
+  //     return reply.status(201).send(find);
 
-    }
+  // }
 
-  return reply.status(201).send({ message: 'success' })
+  return reply.status(201).send({ body })
 })
 
 const express_server = app.listen({ port: 3000 })
