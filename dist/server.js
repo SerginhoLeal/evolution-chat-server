@@ -87,6 +87,12 @@ app.post("/api/register-user", async (request, reply) => {
 });
 app.get("/api/get-chat", async (request, reply) => {
   const { user_id, target_id } = request.query;
+
+  console.log({
+    user_id,
+    target_id
+  });
+
   if (!user_id && !target_id) {
     return reply.status(400).end({ error: "Params empty" });
   }
@@ -104,9 +110,14 @@ app.get("/api/get-chat", async (request, reply) => {
       ]
     }
   }).then((success) => {
+    console.log({ success });
     const find = chats.find((chat) => chat.room_id === success.id);
+    console.log({ find });
     return reply.status(201).json(find);
-  }).catch((error) => reply.status(404).end({ error }));
+  }).catch((error) => {
+    console.log({ error });
+    return reply.status(404).end({ error })
+  });
 });
 app.post("/api/create-instance", async (request, reply) => {
   const { user_id, target_id } = request.query;
