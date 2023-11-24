@@ -145,59 +145,260 @@ app.post('/api/send-message', async(request, reply) => {
   return reply.status(201).send(data);
 })
 
+/*
+  {
+    event: 'messages.upsert',
+    instance: 'whatsapp_instance_sergio',
+    data: {
+      key: {
+        remoteJid: '553175564133@s.whatsapp.net',
+        fromMe: true,
+        id: '3AA64AC482E95FF0798F'
+      },
+      pushName: 'Sergio Leal',
+      message: { conversation: 'Salvei 2' },
+      messageType: 'conversation',
+      messageTimestamp: 1700835590,
+      owner: 'whatsapp_instance_sergio',
+      source: 'ios'
+    },
+    destination: 'https://evolution-chat.onrender.com/api/webhook',
+    date_time: '2023-11-24T11:19:50.442Z',
+    sender: '553175564133@s.whatsapp.net',
+    server_url: 'api.whatsapp.laks.net.br',
+    apikey: 'E7EE1ADE-1AE5-4A78-8401-A708794F765A'
+  }
+
+{
+  event: 'messages.upsert',
+  instance: 'whatsapp_instance_sergio',
+  data: {
+    key: {
+      remoteJid: '553196604728@s.whatsapp.net',
+      fromMe: false,
+      id: '8849B945438975F4C25BC0B78F24BB4F'
+    },
+    pushName: 'Maria Goreti Rosa',
+    message: { extendedTextMessage: [Object], messageContextInfo: [Object] },
+    messageType: 'extendedTextMessage',
+    messageTimestamp: 1700836088,
+    owner: 'whatsapp_instance_sergio',
+    source: 'android'
+  },
+  destination: 'https://evolution-chat.onrender.com/api/webhook',
+  date_time: '2023-11-24T11:28:08.625Z',
+  sender: '553175564133@s.whatsapp.net',
+  server_url: 'api.whatsapp.laks.net.br',
+  apikey: 'E7EE1ADE-1AE5-4A78-8401-A708794F765A'
+}
+
+{
+     "event": "messages.upsert",
+     "instance": "whatsapp_instance_sergio",
+     "data": {
+          "key": {
+               "remoteJid": "553199668527@s.whatsapp.net",
+               "fromMe": true,
+               "id": "3EB0E5226B8A631E36A06E"
+          },
+          "pushName": "Sergio Leal",
+          "message": {
+               "extendedTextMessage": {
+                    "text": "é assim que começa",
+                    "contextInfo": {
+                         "stanzaId": "2F0C1BF027EBAFBAB650D16D3C685EE1",
+                         "participant": "553199668527@s.whatsapp.net",
+                         "quotedMessage": {
+                              "documentWithCaptionMessage": {
+                                   "message": {
+                                        "documentMessage": {
+                                             "url": "https://mmg.whatsapp.net/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&mms3=true",
+                                             "mimetype": "application/zip",
+                                             "fileSha256": "ye+JnBblLNOsIgkh+egqHx9fIEB6/zNZOjCnEF6rOM8=",
+                                             "fileLength": "1372777",
+                                             "pageCount": 0,
+                                             "mediaKey": "i5I1oPhV9a13ilYrHVFAElG66+I6fzvW3IrEb9DFlvA=",
+                                             "fileEncSha256": "MBb6rhM9qL/iXnCKDaTHi1LanhVzQWzsUo6byNLOJao=",
+                                             "directPath": "/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&_nc_hot=1700828779",
+                                             "mediaKeyTimestamp": "1700784082",
+                                             "contactVcard": false,
+                                             "caption": "Anna Bella project zip.zip"
+                                        }
+                                   }
+                              }
+                         }
+                    },
+                    "inviteLinkGroupTypeV2": "DEFAULT"
+               }
+          },
+          "messageType": "extendedTextMessage",
+          "messageTimestamp": 1700836715,
+          "owner": "whatsapp_instance_sergio",
+          "source": "android"
+     },
+     "destination": "https://evolution-chat.onrender.com/api/webhook",
+     "date_time": "2023-11-24T11:38:35.955Z",
+     "sender": "553175564133@s.whatsapp.net",
+     "server_url": "api.whatsapp.laks.net.br",
+     "apikey": "E7EE1ADE-1AE5-4A78-8401-A708794F765A"
+}
+
+*/
+
+interface BodyMessageExtended {
+  event: string; //'messages.upsert',
+  instance: string; //'whatsapp_instance_sergio',
+  data: {
+    key: {
+      remoteJid: string; //'553196604728@s.whatsapp.net',
+      fromMe: boolean; //false,
+      id: string; //'8849B945438975F4C25BC0B78F24BB4F'
+    },
+    pushName: string; //'Maria Goreti Rosa',
+    message: {
+      extendedTextMessage: {
+        text: string; // "é assim que começa",
+        contextInfo: {
+          stanzaId: string; // "2F0C1BF027EBAFBAB650D16D3C685EE1",
+          participant: string; // "553199668527@s.whatsapp.net",
+          quotedMessage: {
+            documentWithCaptionMessage: {
+              message: {
+                documentMessage: {
+                  url: string; // "https://mmg.whatsapp.net/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&mms3=true",
+                  mimetype: string; // "application/zip",
+                  fileSha256: string; // "ye+JnBblLNOsIgkh+egqHx9fIEB6/zNZOjCnEF6rOM8=",
+                  fileLength: string; // "1372777",
+                  pageCount: number; // 0,
+                  mediaKey: string; // "i5I1oPhV9a13ilYrHVFAElG66+I6fzvW3IrEb9DFlvA=",
+                  fileEncSha256: string; // "MBb6rhM9qL/iXnCKDaTHi1LanhVzQWzsUo6byNLOJao=",
+                  directPath: string; // "/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&_nc_hot=1700828779",
+                  mediaKeyTimestamp: string; // "1700784082",
+                  contactVcard: boolean; // false,
+                  caption: string; // "Anna Bella project zip.zip"
+                }
+              }
+            }
+          }
+        },
+        inviteLinkGroupTypeV2: string; // "DEFAULT"
+      },
+      messageContextInfo: {
+  
+      }
+    },
+    messageType: 'extendedTextMessage'; //'extendedTextMessage',
+    messageTimestamp: number; // 1700836088,
+    owner: string; //'whatsapp_instance_sergio',
+    source: string; //'android'
+  },
+  destination: string; //'https://evolution-chat.onrender.com/api/webhook',
+  date_time: string; //'2023-11-24T11:28:08.625Z',
+  sender: string; //'553175564133@s.whatsapp.net',
+  server_url: string; //'api.whatsapp.laks.net.br',
+  apikey: string; //'E7EE1ADE-1AE5-4A78-8401-A708794F765A'
+}
+
+interface BodyMessageConversation {
+  event: 'messages.upsert',
+  instance: 'whatsapp_instance_sergio',
+  data: {
+    key: {
+      remoteJid: '553175564133@s.whatsapp.net',
+      fromMe: true,
+      id: '3AA64AC482E95FF0798F'
+    },
+    pushName: 'Sergio Leal',
+    message: { conversation: 'Salvei 2' },
+    messageType: 'conversation',
+    messageTimestamp: 1700835590,
+    owner: 'whatsapp_instance_sergio',
+    source: 'ios'
+  },
+  destination: 'https://evolution-chat.onrender.com/api/webhook',
+  date_time: '2023-11-24T11:19:50.442Z',
+  sender: string; // '553175564133@s.whatsapp.net',
+  server_url: 'api.whatsapp.laks.net.br',
+  apikey: 'E7EE1ADE-1AE5-4A78-8401-A708794F765A'
+}
+
 app.post('/api/webhook', async(request, reply) => {
-  const body = request.body as any;
+  const body = request.body as BodyMessageConversation;
 
-  console.log(body);
+  const sender_format = body.sender.replace('@s.whatsapp.net', '');
+  const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
 
-  // // numero de quem enviou
-  // const slice_sender_one = body.sender.slice(0, 4);
-  // const slice_sender_two = body.sender.slice(4, 12);
+  const format = (value: string) => {
+    if (value === '553175564133') return '05abe21d-3049-43f8-a842-5fb2af40d8f1';
+    if (value === '553184106645') return '5f1aaf98-740a-466f-aaab-2c74dbfc7004';
+    if (value === '553171868572') return 'badd34de-ae07-4c0a-9c68-aaf17f94f32d';
+    if (value === '553172363441') return 'ecb500ed-4128-4f46-851f-61c0ed43f4f9';
 
-  // // numero de quem recebeu
-  // const slice_target_one = body.data.key.remoteJid.slice(0, 4);
-  // const slice_target_two = body.data.key.remoteJid.slice(4, 12);
+    return ''
+  };
 
-  // if (body.event === 'messages.upsert'){
+  if (
+    sender_format === '553175564133' || sender_format === '553184106645' ||
+    sender_format === '553171868572' || sender_format === '553172363441'
+  ) {
+    if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: format(sender_format),
+              second_member_id: format(target_format),
+            },
+            {
+              first_member_id: format(target_format),
+              second_member_id: format(sender_format),
+            }
+          ]
+        }
+      });
+  
+      if (!find) return reply.status(404).send({ message: 'not found' });
+  
+      socket.emit('sendServerMessage', {
+        room: find?.id,
+        number: target_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      })
+  
+      return reply.status(201).send({ message: 'sender' });
+    };
+  
+    if(body.event === 'messages.upsert' && body.data.messageType === 'conversation') {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: format(sender_format),
+              second_member_id: format(target_format),
+            },
+            {
+              first_member_id: format(target_format),
+              second_member_id: format(sender_format),
+            }
+          ]
+        }
+      });
+  
+      if (!find) return reply.status(404).send({ message: 'not found' });
+  
+      socket.emit('sendServerMessage', {
+        room: find?.id,
+        number: target_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      })
+  
+      return reply.status(201).send({ message: 'sender' });
+    };
+  }
 
-  //     const format = (value: string) => {
-  //       if (value === '5531975564133') {
-  //         return '5fe9c787-4610-4132-998d-186f66f6129d'
-  //       };
-  //       if (value === '5531984106645') {
-  //         return '02a82085-93ea-4e4e-8f39-a73cb2812f11'
-  //       };
-
-  //       return ''
-  //     }
-
-  //     const find = await prisma.chat.findFirst({
-  //       where: {
-  //         OR: [
-  //           {
-  //             first_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-  //             second_member_id: format(`${slice_target_one}9${slice_target_two}`),
-  //           },
-  //           {
-  //             first_member_id: format(`${slice_target_one}9${slice_target_two}`),
-  //             second_member_id: format(`${slice_sender_one}9${slice_sender_two}`),
-  //           }
-  //         ]
-  //       }
-  //     });
-
-  //     socket.emit('sendServerMessage', {
-  //       room: find?.id,
-  //       number: `${slice_target_one}9${slice_target_two}`,
-  //       name: body.data.pushName,
-  //       message: body.data.message.conversation
-  //     })
-
-  //     return reply.status(201).send(find);
-
-  // }
-
-  return reply.status(201).send({ body })
+  return reply.status(201).send({ message: 'received' })
 })
 
 const express_server = app.listen({ port: process.env.PORT || 3000 })

@@ -87,7 +87,6 @@ app.post("/api/register-user", async (request, reply) => {
 });
 app.get("/api/get-chat", async (request, reply) => {
   const { user_id, target_id } = request.query;
-
   if (!user_id && !target_id) {
     return reply.status(400).end({ error: "Params empty" });
   }
@@ -107,9 +106,7 @@ app.get("/api/get-chat", async (request, reply) => {
   }).then((success) => {
     const find = chats.find((chat) => chat.room_id === success.id);
     return reply.status(201).json(find);
-  }).catch((error) => {
-    return reply.status(404).end({ error })
-  });
+  }).catch((error) => reply.status(404).end({ error }));
 });
 app.post("/api/create-instance", async (request, reply) => {
   const { user_id, target_id } = request.query;
@@ -142,8 +139,74 @@ app.post("/api/send-message", async (request, reply) => {
 });
 app.post("/api/webhook", async (request, reply) => {
   const body = request.body;
-  console.log(JSON.stringify(body, null, 5));
-  return reply.status(201).send({ body });
+  const sender_format = body.sender.replace("@s.whatsapp.net", "");
+  const target_format = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+  const format = (value) => {
+    if (value === "553175564133")
+      return "05abe21d-3049-43f8-a842-5fb2af40d8f1";
+    if (value === "553184106645")
+      return "5f1aaf98-740a-466f-aaab-2c74dbfc7004";
+    if (value === "553171868572")
+      return "badd34de-ae07-4c0a-9c68-aaf17f94f32d";
+    if (value === "553172363441")
+      return "ecb500ed-4128-4f46-851f-61c0ed43f4f9";
+    return "";
+  };
+  if (sender_format === "553175564133" || sender_format === "553184106645" || sender_format === "553171868572" || sender_format === "553172363441") {
+    if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: format(sender_format),
+              second_member_id: format(target_format)
+            },
+            {
+              first_member_id: format(target_format),
+              second_member_id: format(sender_format)
+            }
+          ]
+        }
+      });
+      if (!find)
+        return reply.status(404).send({ message: "not found" });
+      socket.emit("sendServerMessage", {
+        room: find?.id,
+        number: target_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      });
+      return reply.status(201).send({ message: "sender" });
+    }
+    ;
+    if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: format(sender_format),
+              second_member_id: format(target_format)
+            },
+            {
+              first_member_id: format(target_format),
+              second_member_id: format(sender_format)
+            }
+          ]
+        }
+      });
+      if (!find)
+        return reply.status(404).send({ message: "not found" });
+      socket.emit("sendServerMessage", {
+        room: find?.id,
+        number: target_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      });
+      return reply.status(201).send({ message: "sender" });
+    }
+    ;
+  }
+  return reply.status(201).send({ message: "received" });
 });
 var express_server = app.listen({ port: process.env.PORT || 3e3 });
 var io = new import_socket.Server(express_server, {
