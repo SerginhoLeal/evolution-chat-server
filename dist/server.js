@@ -75,7 +75,7 @@ var chats = [
     chat_messages: [
       {
         number: "553172363441",
-        name: "luiz",
+        name: "serginho",
         message: "Teste",
         send_at: "2023-11-22 17:26:06"
       }
@@ -200,7 +200,7 @@ app.post("/api/webhook", async (request, reply) => {
       });
       if (!find)
         return reply.status(404).send({ message: "not found" });
-      socket.emit("sendServerMessage", {
+      socket.emit("sendMessage", {
         room: find?.id,
         number: sender_format,
         name: body.data.pushName,
@@ -258,13 +258,6 @@ io.on("connection", (socket2) => {
     socket2.join(room);
   });
   socket2.on("sendMessage", (data) => {
-    io.to(data.room).emit("message", {
-      number: data.number,
-      name: data.name,
-      message: data.message
-    });
-  });
-  socket2.on("sendServerMessage", (data) => {
     console.log(data);
     io.to(data.room).emit("message", {
       number: data.number,
