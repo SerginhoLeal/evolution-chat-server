@@ -353,9 +353,6 @@ interface BodyMessageConversation {
 app.post('/api/webhook', async(request, reply) => {
   const body = request.body as BodyMessageConversation;
 
-  const sender_format = body.sender.replace('@s.whatsapp.net', '');
-  const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
-
   const format = (value: string) => {
     if (value === '553175564133') return '05abe21d-3049-43f8-a842-5fb2af40d8f1';
     if (value === '553184106645') return '5f1aaf98-740a-466f-aaab-2c74dbfc7004';
@@ -364,6 +361,11 @@ app.post('/api/webhook', async(request, reply) => {
 
     return ''
   };
+
+  const sender_format = body.sender.replace('@s.whatsapp.net', '');
+  const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
+
+  if (sender_format === undefined || target_format === undefined) return null;
 
   if (
     sender_format === '553175564133' || sender_format === '553184106645' ||
