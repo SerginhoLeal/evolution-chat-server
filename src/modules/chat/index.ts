@@ -75,6 +75,8 @@ class ChatControllers {
       }
     });
 
+    console.log({ body });
+
     if (findUser.length !== 2) return reply.status(404).send({ message: 'Number Not Found' });
   
     const sender_format = body.sender.replace('@s.whatsapp.net', '');
