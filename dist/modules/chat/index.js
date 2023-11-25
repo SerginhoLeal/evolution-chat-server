@@ -60,7 +60,8 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
-    console.log("stringify: ", JSON.stringify(body.data.key));
+    console.log("stringify: ", JSON.stringify(body.data));
+    console.log(body, null, 5);
     const findUser = await prisma.user.findMany({
       where: {
         OR: [
@@ -76,7 +77,6 @@ var ChatControllers = class {
         id: true
       }
     });
-    console.log(body, null, 5);
     if (findUser.length !== 2)
       return reply.status(404).send({ message: "Number Not Found" });
     const sender_format = body.sender.replace("@s.whatsapp.net", "");

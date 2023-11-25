@@ -59,7 +59,8 @@ class ChatControllers {
     const body = request.body as BodyMessageConversation;
     // const body = request.body as BodyMessageExtended;
 
-    console.log('stringify: ', JSON.stringify(body.data.key));
+    console.log('stringify: ', JSON.stringify(body.data));
+    console.log(body, null, 5);
 
     const findUser = await prisma.user.findMany({
       where: {
@@ -77,7 +78,6 @@ class ChatControllers {
       }
     });
 
-    console.log(body, null, 5);
 
     if (findUser.length !== 2) return reply.status(404).send({ message: 'Number Not Found' });
   
