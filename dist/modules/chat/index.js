@@ -98,7 +98,7 @@ var ChatControllers = class {
       });
       socket.emit("sendMessage", {
         room: find?.id,
-        number: sender_format,
+        number: verify_data,
         name: body.data.pushName,
         message: body.data.message.extendedTextMessage.text
       });
@@ -122,7 +122,7 @@ var ChatControllers = class {
       });
       socket.emit("sendMessage", {
         room: find?.id,
-        number: sender_format,
+        number: verify_data,
         name: body.data.pushName,
         message: body.data.message.conversation
       });
