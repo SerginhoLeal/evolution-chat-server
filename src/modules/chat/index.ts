@@ -59,7 +59,7 @@ class ChatControllers {
     const body = request.body as BodyMessageConversation;
     // const body = request.body as BodyMessageExtended;
 
-    console.log('stringify: ', JSON.stringify(body.data.key.remoteJid).replace('@s.whatsapp.net', ''));
+    console.log('stringify: ', JSON.stringify(body.data.key));
 
     const findUser = await prisma.user.findMany({
       where: {
