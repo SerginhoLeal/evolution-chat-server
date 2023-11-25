@@ -99,7 +99,7 @@ var ChatControllers = class {
       where: {
         OR: [
           {
-            number: `${body.data.key.remoteJid.replace("@s.whatsapp.net", "")}`
+            number: `${JSON.stringify(body.data.key.remoteJid).replace("@s.whatsapp.net", "")}`
           },
           {
             number: `${body.sender.replace("@s.whatsapp.net", "")}`
