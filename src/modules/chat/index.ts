@@ -6,10 +6,7 @@ import { io as client } from "socket.io-client";
 
 import { BodyMessageConversation, BodyMessageExtended } from './types';
 
-// const TEST_URL = 'https://evolution-chat.onrender.com';
-const TEST_URL = 'http://localhost:3000';
-
-const socket = client(TEST_URL, { transports: ['websocket'] })
+const socket = client(`${process.env.SOCKET_PORT}`, { transports: ['websocket'] })
 
 const prisma = new PrismaClient();
 

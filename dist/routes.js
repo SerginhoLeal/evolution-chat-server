@@ -53,8 +53,7 @@ var UserControllers = class {
 var import_express = require("express");
 var import_client2 = require("@prisma/client");
 var import_socket = require("socket.io-client");
-var TEST_URL = "http://localhost:3000";
-var socket = (0, import_socket.io)(TEST_URL, { transports: ["websocket"] });
+var socket = (0, import_socket.io)(`${process.env.SOCKET_PORT}`, { transports: ["websocket"] });
 var prisma2 = new import_client2.PrismaClient();
 var ChatControllers = class {
   async find(request, reply) {
