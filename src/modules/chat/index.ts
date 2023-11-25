@@ -1,4 +1,4 @@
-import { Request, Response, response } from 'express';
+import { Request, Response } from 'express';
 
 import { PrismaClient } from '@prisma/client';
 
@@ -9,23 +9,6 @@ import { BodyMessageConversation, BodyMessageExtended } from './types';
 const socket = client(`${process.env.SOCKET_PORT}`, { transports: ['websocket'] })
 
 const prisma = new PrismaClient();
-
-let chats = [
-  { // me && laura
-    room_id: 'clpdci4sw0001n9309wj878zy',
-    destination: 'db',
-    first_member_id: "f3773e98-1033-4dcc-bda8-4a5ecacb1fcf",
-    second_member_id: "02fa713d-f33b-48bd-95f4-bfefc242ad7d",
-    chat_messages: [
-      {
-        number: '553175564133',
-        name: 'serginho',
-        message: 'bom dia, amor ❤',
-        send_at: '2023-11-22 17:26:06'
-      }
-    ]
-  }
-];
 
 class ChatControllers {
   async find(request: Request, reply: Response) {
@@ -72,88 +55,82 @@ class ChatControllers {
   };
 
   async send(request: Request, reply: Response){
-    const body = request.body as BodyMessageConversation | BodyMessageExtended;
+    const body = request.body as any;
+    // const body = request.body as BodyMessageConversation;
+    // const body = request.body as BodyMessageExtended;
 
-    const format = (value: string) => {
-      if (value === '553175564133') return '05abe21d-3049-43f8-a842-5fb2af40d8f1';
-      if (value === '553184106645') return '5f1aaf98-740a-466f-aaab-2c74dbfc7004';
-      if (value === '553171868572') return 'badd34de-ae07-4c0a-9c68-aaf17f94f32d';
-      if (value === '553192363441') return 'ecb500ed-4128-4f46-851f-61c0ed43f4f9';
+    const findUser = await prisma.user.findMany({
+      where: {
+        OR: [
+          {
+            number: `${body.data.key.remoteJid.replace('@s.whatsapp.net', '')}`
+          },
+          {
+            number: `${body.sender.replace('@s.whatsapp.net', '')}`
+          }
+        ]
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (findUser.length !== 2) return reply.status(404).send({ message: 'Number Not Found' });
   
-      return '';
+    const sender_format = body.sender.replace('@s.whatsapp.net', '');
+
+    if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: findUser[0].id,
+              second_member_id: findUser[1].id,
+            },
+            {
+              first_member_id: findUser[1].id,
+              second_member_id: findUser[0].id,
+            }
+          ]
+        }
+      });
+
+      socket.emit('sendMessage', {
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
+      })
+  
+      return reply.status(201).send({ message: 'sender' });
     };
+
+    if(body.event === 'messages.upsert' && body.data.messageType === 'conversation') {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: findUser[0].id,
+              second_member_id: findUser[1].id,
+            },
+            {
+              first_member_id: findUser[1].id,
+              second_member_id: findUser[0].id,
+            }
+          ]
+        }
+      });
   
-    if (
-      body.sender === '553175564133@s.whatsapp.net' || body.sender === '553184106645@s.whatsapp.net' ||
-      body.sender === '553171868572@s.whatsapp.net' || body.sender === '553192363441@s.whatsapp.net'
-      ) {
+      socket.emit('sendMessage', {
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      })
   
-      const sender_format = body.sender.replace('@s.whatsapp.net', '');
-      const target_format = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
+      return reply.status(201).send({ message: 'sender' });
+    };
 
-      console.log(body);
-
-      if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
-        const find = await prisma.chat.findFirst({
-          where: {
-            OR: [
-              {
-                first_member_id: format(sender_format),
-                second_member_id: format(target_format),
-              },
-              {
-                first_member_id: format(target_format),
-                second_member_id: format(sender_format),
-              }
-            ]
-          }
-        });
-    
-        if (!find) return reply.status(404).send({ message: 'not found' });
-        // console.log(find?.id);
-        // console.log(target_format);
-        // console.log(body.data.pushName);
-        // console.log(body.data.message.conversation);
-        socket.emit('sendMessage', {
-          room: find?.id,
-          number: sender_format,
-          name: body.data.pushName,
-          message: body.data.message.conversation
-        })
-    
-        return reply.status(201).send({ message: 'sender' });
-      };
-    
-      if(body.event === 'messages.upsert' && body.data.messageType === 'conversation') {
-        const find = await prisma.chat.findFirst({
-          where: {
-            OR: [
-              {
-                first_member_id: format(sender_format),
-                second_member_id: format(target_format),
-              },
-              {
-                first_member_id: format(target_format),
-                second_member_id: format(sender_format),
-              }
-            ]
-          }
-        });
-    
-        if (!find) return reply.status(404).send({ message: 'not found' });
-    
-        socket.emit('sendMessage', {
-          room: find?.id,
-          number: sender_format,
-          name: body.data.pushName,
-          message: body.data.message.conversation
-        })
-    
-        return reply.status(201).send({ message: 'sender' });
-      };
-    }
-
-    return response.status(201).json({ message: 201 });
   }
 };
 

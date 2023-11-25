@@ -23,7 +23,6 @@ __export(chat_exports, {
   ChatControllers: () => ChatControllers
 });
 module.exports = __toCommonJS(chat_exports);
-var import_express = require("express");
 var import_client = require("@prisma/client");
 var import_socket = require("socket.io-client");
 var socket = (0, import_socket.io)(`${process.env.SOCKET_PORT}`, { transports: ["websocket"] });
@@ -61,75 +60,72 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
-    const format = (value) => {
-      if (value === "553175564133")
-        return "05abe21d-3049-43f8-a842-5fb2af40d8f1";
-      if (value === "553184106645")
-        return "5f1aaf98-740a-466f-aaab-2c74dbfc7004";
-      if (value === "553171868572")
-        return "badd34de-ae07-4c0a-9c68-aaf17f94f32d";
-      if (value === "553192363441")
-        return "ecb500ed-4128-4f46-851f-61c0ed43f4f9";
-      return "";
-    };
-    if (body.sender === "553175564133@s.whatsapp.net" || body.sender === "553184106645@s.whatsapp.net" || body.sender === "553171868572@s.whatsapp.net" || body.sender === "553192363441@s.whatsapp.net") {
-      const sender_format = body.sender.replace("@s.whatsapp.net", "");
-      const target_format = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
-      console.log(body);
-      if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
-        const find = await prisma.chat.findFirst({
-          where: {
-            OR: [
-              {
-                first_member_id: format(sender_format),
-                second_member_id: format(target_format)
-              },
-              {
-                first_member_id: format(target_format),
-                second_member_id: format(sender_format)
-              }
-            ]
+    const findUser = await prisma.user.findMany({
+      where: {
+        OR: [
+          {
+            number: `${body.data.key.remoteJid.replace("@s.whatsapp.net", "")}`
+          },
+          {
+            number: `${body.sender.replace("@s.whatsapp.net", "")}`
           }
-        });
-        if (!find)
-          return reply.status(404).send({ message: "not found" });
-        socket.emit("sendMessage", {
-          room: find?.id,
-          number: sender_format,
-          name: body.data.pushName,
-          message: body.data.message.conversation
-        });
-        return reply.status(201).send({ message: "sender" });
+        ]
+      },
+      select: {
+        id: true
       }
-      ;
-      if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
-        const find = await prisma.chat.findFirst({
-          where: {
-            OR: [
-              {
-                first_member_id: format(sender_format),
-                second_member_id: format(target_format)
-              },
-              {
-                first_member_id: format(target_format),
-                second_member_id: format(sender_format)
-              }
-            ]
-          }
-        });
-        if (!find)
-          return reply.status(404).send({ message: "not found" });
-        socket.emit("sendMessage", {
-          room: find?.id,
-          number: sender_format,
-          name: body.data.pushName,
-          message: body.data.message.conversation
-        });
-        return reply.status(201).send({ message: "sender" });
-      }
-      ;
+    });
+    if (findUser.length !== 2)
+      return reply.status(404).send({ message: "Number Not Found" });
+    const sender_format = body.sender.replace("@s.whatsapp.net", "");
+    if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: findUser[0].id,
+              second_member_id: findUser[1].id
+            },
+            {
+              first_member_id: findUser[1].id,
+              second_member_id: findUser[0].id
+            }
+          ]
+        }
+      });
+      socket.emit("sendMessage", {
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
+      });
+      return reply.status(201).send({ message: "sender" });
     }
-    return import_express.response.status(201).json({ message: 201 });
+    ;
+    if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
+      const find = await prisma.chat.findFirst({
+        where: {
+          OR: [
+            {
+              first_member_id: findUser[0].id,
+              second_member_id: findUser[1].id
+            },
+            {
+              first_member_id: findUser[1].id,
+              second_member_id: findUser[0].id
+            }
+          ]
+        }
+      });
+      socket.emit("sendMessage", {
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      });
+      return reply.status(201).send({ message: "sender" });
+    }
+    ;
   }
 };
 // Annotate the CommonJS export names for ESM import in node:
