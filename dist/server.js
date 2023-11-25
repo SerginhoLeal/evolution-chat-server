@@ -171,6 +171,7 @@ var prisma3 = new import_client3.PrismaClient();
 var InstanceControllers = class {
   async find(request, reply) {
     const { use_logged_id } = request.query;
+    console.log('use_logged_id: ', use_logged_id);
     return prisma3.instance.findMany({
       where: {
         user_id: `${use_logged_id}`
@@ -182,7 +183,12 @@ var InstanceControllers = class {
           }
         }
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+    })
+      .then((success) => {
+        console.log('success: ', success);
+
+        return reply.status(201).json(success);
+      }).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
     const { use_logged_id } = request.query;
