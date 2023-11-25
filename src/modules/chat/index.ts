@@ -60,8 +60,6 @@ class ChatControllers {
     // const body = request.body as BodyMessageExtended;
 
     console.log('stringify: ', JSON.stringify(body.data.key.remoteJid));
-    console.log('parse: ', JSON.parse(body.data.key.remoteJid));
-    console.log('key_parse: ', JSON.stringify(body.data.key));
 
     const findUser = await prisma.user.findMany({
       where: {
