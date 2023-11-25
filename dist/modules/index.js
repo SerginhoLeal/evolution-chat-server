@@ -88,6 +88,8 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
+    console.log("stringify: ", JSON.stringify(body.data.key.remoteJid));
+    console.log("parse: ", JSON.parse(body.data.key.remoteJid));
     const findUser = await prisma2.user.findMany({
       where: {
         OR: [
@@ -103,7 +105,7 @@ var ChatControllers = class {
         id: true
       }
     });
-    console.log({ body });
+    console.log(body, null, 5);
     if (findUser.length !== 2)
       return reply.status(404).send({ message: "Number Not Found" });
     const sender_format = body.sender.replace("@s.whatsapp.net", "");
@@ -121,14 +123,6 @@ var ChatControllers = class {
             }
           ]
         }
-      });
-      console.log({ find });
-      console.log({
-        status: "extendedTextMessage",
-        room: find?.id,
-        number: sender_format,
-        name: body.data.pushName,
-        message: body.data.message.conversation
       });
       socket.emit("sendMessage", {
         room: find?.id,
@@ -153,14 +147,6 @@ var ChatControllers = class {
             }
           ]
         }
-      });
-      console.log({ find });
-      console.log({
-        status: "conversation",
-        room: find?.id,
-        number: sender_format,
-        name: body.data.pushName,
-        message: body.data.message.conversation
       });
       socket.emit("sendMessage", {
         room: find?.id,

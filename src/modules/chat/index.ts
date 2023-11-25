@@ -55,9 +55,12 @@ class ChatControllers {
   };
 
   async send(request: Request, reply: Response){
-    const body = request.body as any;
-    // const body = request.body as BodyMessageConversation;
+    // const body = request.body as any;
+    const body = request.body as BodyMessageConversation;
     // const body = request.body as BodyMessageExtended;
+
+    console.log('stringify: ', JSON.stringify(body.data.key.remoteJid));
+    console.log('parse: ', JSON.parse(body.data.key.remoteJid));
 
     const findUser = await prisma.user.findMany({
       where: {
@@ -75,7 +78,7 @@ class ChatControllers {
       }
     });
 
-    console.log({ body });
+    console.log(body, null, 5);
 
     if (findUser.length !== 2) return reply.status(404).send({ message: 'Number Not Found' });
   
@@ -97,15 +100,15 @@ class ChatControllers {
         }
       });
 
-      console.log({ find });
+      // console.log({ find });
 
-      console.log({
-        status: 'extendedTextMessage',
-        room: find?.id,
-        number: sender_format,
-        name: body.data.pushName,
-        message: body.data.message.conversation
-      });
+      // console.log({
+      //   status: 'extendedTextMessage',
+      //   room: find?.id,
+      //   number: sender_format,
+      //   name: body.data.pushName,
+      //   message: body.data.message.conversation
+      // });
 
       socket.emit('sendMessage', {
         room: find?.id,
@@ -133,15 +136,15 @@ class ChatControllers {
         }
       });
 
-      console.log({ find });
+      // console.log({ find });
 
-      console.log({
-        status: 'conversation',
-        room: find?.id,
-        number: sender_format,
-        name: body.data.pushName,
-        message: body.data.message.conversation
-      });
+      // console.log({
+      //   status: 'conversation',
+      //   room: find?.id,
+      //   number: sender_format,
+      //   name: body.data.pushName,
+      //   message: body.data.message.conversation
+      // });
 
       socket.emit('sendMessage', {
         room: find?.id,
