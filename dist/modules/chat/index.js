@@ -60,7 +60,7 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
-    console.log("stringify: ", JSON.stringify(body.data.key.remoteJid));
+    console.log("stringify: ", JSON.stringify(body.data.key.remoteJid).replace("@s.whatsapp.net", ""));
     const findUser = await prisma.user.findMany({
       where: {
         OR: [
