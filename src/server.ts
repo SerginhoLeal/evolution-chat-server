@@ -51,6 +51,8 @@ io.on("connection", (socket) => {
 
   // Listen for chatMessage
   socket.on("sendMessage", (data) => {
+    console.log(data);
+    
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,

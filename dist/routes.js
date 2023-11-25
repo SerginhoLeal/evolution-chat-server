@@ -120,6 +120,14 @@ var ChatControllers = class {
           ]
         }
       });
+      console.log({ find });
+      console.log({
+        status: "extendedTextMessage",
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
+      });
       socket.emit("sendMessage", {
         room: find?.id,
         number: sender_format,
@@ -143,6 +151,14 @@ var ChatControllers = class {
             }
           ]
         }
+      });
+      console.log({ find });
+      console.log({
+        status: "conversation",
+        room: find?.id,
+        number: sender_format,
+        name: body.data.pushName,
+        message: body.data.message.conversation
       });
       socket.emit("sendMessage", {
         room: find?.id,
