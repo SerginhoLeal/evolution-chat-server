@@ -9,7 +9,9 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "instances" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "instance_name" TEXT NOT NULL
+    "user_id" TEXT NOT NULL,
+    "instance_name" TEXT NOT NULL,
+    CONSTRAINT "instances_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -19,7 +21,9 @@ CREATE TABLE "chats" (
     "first_member_id" TEXT NOT NULL,
     "second_member_id" TEXT NOT NULL,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "chats_instance_id_fkey" FOREIGN KEY ("instance_id") REFERENCES "instances" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "chats_instance_id_fkey" FOREIGN KEY ("instance_id") REFERENCES "instances" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "chats_first_member_id_fkey" FOREIGN KEY ("first_member_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "chats_second_member_id_fkey" FOREIGN KEY ("second_member_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable

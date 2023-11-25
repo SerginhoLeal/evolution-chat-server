@@ -1,10 +1,12 @@
 "use strict";
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -13,21 +15,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-
-// src/server.ts
-var import_express3 = __toESM(require("express"));
-var import_cors = __toESM(require("cors"));
-var import_socket2 = require("socket.io");
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/routes.ts
+var routes_exports = {};
+__export(routes_exports, {
+  routes: () => routes
+});
+module.exports = __toCommonJS(routes_exports);
 var import_express2 = require("express");
 
 // src/modules/user.ts
@@ -209,41 +204,7 @@ routes.post("/create-instance", instanceControllers.create);
 routes.get("/find-chat", chatControllers.find);
 routes.post("/create-chat", chatControllers.create);
 routes.post("/send-by-whatsapp", chatControllers.send);
-
-// src/server.ts
-var app = (0, import_express3.default)();
-app.use(import_express3.default.json());
-app.use((0, import_cors.default)());
-app.use("/api", routes);
-var express_server = app.listen(process.env.PORT, () => console.log("Server Running"));
-var io = new import_socket2.Server(express_server, {
-  cors: {
-    origin: "*"
-  }
-});
-var users = [];
-io.on("connection", (socket2) => {
-  socket2.on("add_new_user", ({ id, name, number }) => {
-    !users.some((user) => user.id === id) && users.push({
-      id,
-      name,
-      number,
-      socketId: socket2.id
-    });
-    io.emit("get_online_users", users);
-  });
-  socket2.on("on_join_room", ({ room, userId }) => {
-    socket2.join(room);
-  });
-  socket2.on("sendMessage", (data) => {
-    io.to(data.room).emit("message", {
-      number: data.number,
-      name: data.name,
-      message: data.message
-    });
-  });
-  socket2.on("disconnect", () => {
-    users = users.filter((users2) => users2.socketId !== socket2.id);
-    io.emit("get_online_users", users);
-  });
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  routes
 });

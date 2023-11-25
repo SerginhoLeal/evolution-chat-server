@@ -16,14 +16,20 @@ model User {
   number     String   @unique
   created_at DateTime @default(now())
 
+  instance      Instance[]
+  first_member  Chat[]     @relation("first_member")
+  second_member Chat[]     @relation("second_member")
+
   @@map("users")
 }
 
 model Instance {
   id            String @id @default(uuid())
+  user_id       String
   instance_name String @unique
 
   Chat Chat[]
+  User User?  @relation(fields: [user_id], references: [id])
 
   @@map("instances")
 }
@@ -37,7 +43,9 @@ model Chat {
 
   messages Message[]
 
-  instances Instance @relation(fields: [instance_id], references: [id], onDelete: Cascade)
+  instances     Instance @relation(fields: [instance_id], references: [id], onDelete: Cascade)
+  first_member  User     @relation("first_member", fields: [first_member_id], references: [id])
+  second_member User     @relation("second_member", fields: [second_member_id], references: [id])
 
   @@map("chats")
 }
