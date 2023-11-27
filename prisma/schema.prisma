@@ -29,7 +29,7 @@ model Instance {
   instance_name String @unique
 
   chat Chat[]
-  user User?  @relation(fields: [user_id], references: [id])
+  user User?  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("instances")
 }

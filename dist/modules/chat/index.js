@@ -61,7 +61,6 @@ var ChatControllers = class {
   async send(request, reply) {
     const body = request.body;
     if (body.event === "connection.update" && body.data.state === "open") {
-      console.log(body);
       socket.emit("instance_connected", {
         instance: body.instance,
         message: "Instance Connected",

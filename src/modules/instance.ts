@@ -13,7 +13,7 @@ class InstanceControllers {
         user_id: `${use_logged_id}`
       },
       include: {
-        Chat: {
+        chat: {
           include: {
             second_member: true
           }
@@ -35,6 +35,19 @@ class InstanceControllers {
       }
     })
       .then(success => reply.status(201).json(success))
+      .catch(error => reply.status(404).end({ error }))
+  };
+
+  async delete(request: Request, reply: Response) {
+    const { use_logged_id, instance_id } = request.query;
+
+    return await prisma.instance.delete({
+      where: {
+        id: `${instance_id}`,
+        user_id: `${use_logged_id}`
+      },
+    })
+      .then(success => reply.status(201).json({ message: `instance ${success.instance_name} deleted` }))
       .catch(error => reply.status(404).end({ error }))
   }
 };

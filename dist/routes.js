@@ -88,7 +88,6 @@ var ChatControllers = class {
   async send(request, reply) {
     const body = request.body;
     if (body.event === "connection.update" && body.data.state === "open") {
-      console.log(body);
       socket.emit("instance_connected", {
         instance: body.instance,
         message: "Instance Connected",
@@ -193,7 +192,7 @@ var InstanceControllers = class {
         user_id: `${use_logged_id}`
       },
       include: {
-        Chat: {
+        chat: {
           include: {
             second_member: true
           }
@@ -211,6 +210,15 @@ var InstanceControllers = class {
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
+  async delete(request, reply) {
+    const { use_logged_id, instance_id } = request.query;
+    return await prisma3.instance.delete({
+      where: {
+        id: `${instance_id}`,
+        user_id: `${use_logged_id}`
+      }
+    }).then((success) => reply.status(201).json({ message: `instance ${success.instance_name} deleted` })).catch((error) => reply.status(404).end({ error }));
+  }
 };
 
 // src/routes.ts
@@ -222,6 +230,7 @@ routes.post("/login-user", userControllers.login);
 routes.post("/create-user", userControllers.register);
 routes.get("/find-instance", instanceControllers.find);
 routes.post("/create-instance", instanceControllers.create);
+routes.delete("/delete-instance", instanceControllers.delete);
 routes.get("/find-chat", chatControllers.find);
 routes.post("/create-chat", chatControllers.create);
 routes.post("/send-by-whatsapp", chatControllers.send);

@@ -89,7 +89,6 @@ var ChatControllers = class {
   async send(request, reply) {
     const body = request.body;
     if (body.event === "connection.update" && body.data.state === "open") {
-      console.log(body);
       socket.emit("instance_connected", {
         instance: body.instance,
         message: "Instance Connected",
@@ -194,7 +193,7 @@ var InstanceControllers = class {
         user_id: `${use_logged_id}`
       },
       include: {
-        Chat: {
+        chat: {
           include: {
             second_member: true
           }
@@ -211,6 +210,15 @@ var InstanceControllers = class {
         user_id: `${use_logged_id}`
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  }
+  async delete(request, reply) {
+    const { use_logged_id, instance_id } = request.query;
+    return await prisma3.instance.delete({
+      where: {
+        id: `${instance_id}`,
+        user_id: `${use_logged_id}`
+      }
+    }).then((success) => reply.status(201).json({ message: `instance ${success.instance_name} deleted` })).catch((error) => reply.status(404).end({ error }));
   }
 };
 // Annotate the CommonJS export names for ESM import in node:

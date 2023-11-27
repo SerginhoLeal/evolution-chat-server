@@ -13,6 +13,7 @@ routes.post('/create-user', userControllers.register);
 
 routes.get('/find-instance', instanceControllers.find);
 routes.post('/create-instance', instanceControllers.create);
+routes.delete('/delete-instance', instanceControllers.delete);
 // routes.post('/create-contact', instanceControllers.contact);
 
 routes.get('/find-chat', chatControllers.find);

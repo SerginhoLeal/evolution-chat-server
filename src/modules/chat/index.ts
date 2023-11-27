@@ -33,10 +33,6 @@ class ChatControllers {
       },
     })
       .then(success => reply.status(201).json(success))
-      // .then(success => {
-      //   const find = chats.find(chat => chat.room_id === success?.id)
-      //   return reply.status(201).json(find)
-      // })
       .catch(error => reply.status(404).end({ error }))
   };
 
@@ -63,8 +59,6 @@ class ChatControllers {
     // console.log(body, null, 5);
 
     if (body.event === 'connection.update' && body.data.state === 'open') {
-      console.log(body);
-      
       socket.emit('instance_connected', {
         instance: body.instance,
         message: 'Instance Connected',
@@ -72,7 +66,6 @@ class ChatControllers {
       })
     }
 
-    
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
   
