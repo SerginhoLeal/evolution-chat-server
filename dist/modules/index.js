@@ -96,6 +96,7 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
+    console.log(body);
     if (body.event === "connection.update" && body.data.state === "open") {
       socket.emit("instance_connected", {
         instance: body.instance,
@@ -104,7 +105,6 @@ var ChatControllers = class {
       });
     }
     ;
-    console.log(body);
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma2.user.findMany({

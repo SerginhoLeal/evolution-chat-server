@@ -57,6 +57,7 @@ class ChatControllers {
 
     // console.log('stringify: ', JSON.stringify(body.data));
     // console.log(body, null, 5);
+    console.log(body);
 
     if (body.event === 'connection.update' && body.data.state === 'open') {
       socket.emit('instance_connected', {
@@ -65,8 +66,6 @@ class ChatControllers {
         status: true
       })
     };
-
-    console.log(body);
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
