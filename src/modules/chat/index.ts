@@ -104,7 +104,7 @@ class ChatControllers {
 
       socket.emit('sendMessage', {
         room: find?.id,
-        number: verify_data,
+        number: verify_data.replace('@s.whatsapp.net', ''),
         name: body.data.pushName,
         message: body.data.message.extendedTextMessage.text
       })
@@ -160,7 +160,7 @@ class ChatControllers {
 
       socket.emit('sendMessage', {
         room: find?.id,
-        number: verify_data,
+        number: verify_data.replace('@s.whatsapp.net', ''),
         name: body.data.pushName,
         message: body.data.message.conversation
       })

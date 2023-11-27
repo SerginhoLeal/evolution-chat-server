@@ -134,7 +134,7 @@ var ChatControllers = class {
       });
       socket.emit("sendMessage", {
         room: find?.id,
-        number: verify_data,
+        number: verify_data.replace("@s.whatsapp.net", ""),
         name: body.data.pushName,
         message: body.data.message.extendedTextMessage.text
       });
@@ -176,7 +176,7 @@ var ChatControllers = class {
       });
       socket.emit("sendMessage", {
         room: find?.id,
-        number: verify_data,
+        number: verify_data.replace("@s.whatsapp.net", ""),
         name: body.data.pushName,
         message: body.data.message.conversation
       });
@@ -253,20 +253,10 @@ var io = new import_socket2.Server(express_server, {
 });
 var users = [];
 io.on("connection", (socket2) => {
-  socket2.on("add_new_user", ({ id, name, number }) => {
-    !users.some((user) => user.id === id) && users.push({
-      id,
-      name,
-      number,
-      socketId: socket2.id
-    });
-    io.emit("get_online_users", users);
-  });
-  socket2.on("on_join_room", ({ room, userId }) => {
-    socket2.join(room);
-  });
+  socket2.on("on_join_room", ({ room }) => socket2.join(room));
   socket2.on("sendMessage", (data) => {
-    io.to(data.room).emit("message", {
+    console.log(data);
+    io.to(data.room).emit("chat_message", {
       number: data.number,
       name: data.name,
       message: data.message

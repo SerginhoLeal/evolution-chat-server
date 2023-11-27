@@ -23,34 +23,33 @@ const io = new Server(express_server, {
 let users: any[] = [];
 
 io.on("connection", (socket) => {
-  socket.on("add_new_user", ({ id, name, number }) => {
-    !users.some(user => user.id === id) &&
-    users.push({
-      id,
-      name,
-      number,
-      socketId: socket.id
-    })
+  // socket.on("add_new_user", ({ id, name, number }) => {
+  //   !users.some(user => user.id === id) &&
+  //   users.push({
+  //     id,
+  //     name,
+  //     number,
+  //     socketId: socket.id
+  //   })
 
-    io.emit('get_online_users', users);
-  });
+  //   io.emit('get_online_users', users);
+  // });
 
-  socket.on("on_join_room", ({ room, userId }) => {
-    socket.join(room);
-
-    // socket.broadcast
-    //   .to(room)
-    //   .emit("message", {
-    //     message_id: 0,
-    //     number: '5531975564134',
-    //     username: 'Marco',
-    //     message: 'Obrigado pelo contato, logo logo atenderei você, por favor aguarde!'
-    //   });
-  });
+  socket.on("on_join_room", ({ room }) => socket.join(room));
+  // socket.broadcast
+  //   .to(room)
+  //   .emit("message", {
+  //     message_id: 0,
+  //     number: '553175564133',
+  //     name: 'Marco',
+  //     message: 'Obrigado pelo contato, logo logo atenderei você, por favor aguarde!'
+  //   });
 
   // Listen for chatMessage
   socket.on("sendMessage", (data) => {
-    io.to(data.room).emit("message", {
+    console.log(data);
+    
+    io.to(data.room).emit("chat_message", {
       number: data.number,
       name: data.name,
       message: data.message
