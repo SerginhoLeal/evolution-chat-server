@@ -95,6 +95,7 @@ var ChatControllers = class {
     if (body.event === "connection.update" && body.data.state === "open") {
       console.log(body);
       socket.emit("instance_connected", {
+        instance: body.instance,
         message: "Instance Connected",
         status: true
       });
@@ -256,11 +257,19 @@ io.on("connection", (socket2) => {
     socket2.join(room);
   });
   socket2.on("sendMessage", (data) => {
-    console.log(data);
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,
       message: data.message
+    });
+  });
+  socket2.on("join_instance", (data) => socket2.join(data.instance_room));
+  socket2.on("instance_connected", (data) => {
+    console.log(data);
+    io.to(data.instance).emit("instance_message", {
+      instance: data.instance,
+      message: data.message,
+      status: data.status
     });
   });
   socket2.on("disconnect", () => {

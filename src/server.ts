@@ -48,15 +48,23 @@ io.on("connection", (socket) => {
     //   });
   });
 
-
   // Listen for chatMessage
   socket.on("sendMessage", (data) => {
-    console.log(data);
-    
     io.to(data.room).emit("message", {
       number: data.number,
       name: data.name,
       message: data.message
+    });
+  });
+
+  socket.on("join_instance", (data) => socket.join(data.instance_room));
+
+  socket.on("instance_connected", (data) => {
+    console.log(data);
+    io.to(data.instance).emit("instance_message", {
+      instance: data.instance,
+      message: data.message,
+      status: data.status
     });
   });
 

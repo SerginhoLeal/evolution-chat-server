@@ -91,6 +91,7 @@ var ChatControllers = class {
     if (body.event === "connection.update" && body.data.state === "open") {
       console.log(body);
       socket.emit("instance_connected", {
+        instance: body.instance,
         message: "Instance Connected",
         status: true
       });

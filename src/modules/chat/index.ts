@@ -66,6 +66,7 @@ class ChatControllers {
       console.log(body);
       
       socket.emit('instance_connected', {
+        instance: body.instance,
         message: 'Instance Connected',
         status: true
       })
