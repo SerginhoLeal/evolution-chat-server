@@ -30,6 +30,18 @@ class UserControllers {
       .then(success => reply.status(201).json(success))
       .catch(error => reply.status(404).end({ error }))
   };
+
+  async delete(request: Request, reply: Response) {
+    const { use_logged_id } = request.query;
+
+    return await prisma.user.delete({
+      where: {
+        id: `${use_logged_id}`
+      },
+    })
+      .then(success => reply.status(201).json(success))
+      .catch(error => reply.status(404).end({ error }))
+  };
 };
 
 export {

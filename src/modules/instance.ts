@@ -20,7 +20,12 @@ class InstanceControllers {
         }
       }
     })
-      .then(success => reply.status(201).json(success))
+      .then(success => {
+        if (success.length === 0) {
+          return reply.status(201).json({ data: success, message: 'Create an Instance' });
+        };
+        return reply.status(201).json({ data: success, message: `Returned ${success.length} instances` })
+      })
       .catch(error => reply.status(404).end({ error }))
   };
 

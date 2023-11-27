@@ -48,6 +48,14 @@ var UserControllers = class {
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
+  async delete(request, reply) {
+    const { use_logged_id } = request.query;
+    return await prisma.user.delete({
+      where: {
+        id: `${use_logged_id}`
+      }
+    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  }
 };
 
 // src/modules/chat/index.ts
@@ -199,7 +207,13 @@ var InstanceControllers = class {
           }
         }
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+    }).then((success) => {
+      if (success.length === 0) {
+        return reply.status(201).json({ data: success, message: "Create an Instance" });
+      }
+      ;
+      return reply.status(201).json({ data: success, message: `Returned ${success.length} instances` });
+    }).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
     const { use_logged_id } = request.query;

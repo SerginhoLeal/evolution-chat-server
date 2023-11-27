@@ -44,6 +44,14 @@ var UserControllers = class {
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
+  async delete(request, reply) {
+    const { use_logged_id } = request.query;
+    return await prisma.user.delete({
+      where: {
+        id: `${use_logged_id}`
+      }
+    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  }
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

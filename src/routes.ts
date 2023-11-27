@@ -10,6 +10,7 @@ const instanceControllers = new InstanceControllers();
 
 routes.post('/login-user', userControllers.login);
 routes.post('/create-user', userControllers.register);
+routes.delete('/delete-user', userControllers.delete);
 
 routes.get('/find-instance', instanceControllers.find);
 routes.post('/create-instance', instanceControllers.create);
