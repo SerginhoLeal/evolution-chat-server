@@ -28,8 +28,8 @@ model Instance {
   user_id       String
   instance_name String @unique
 
-  Chat Chat[]
-  User User?  @relation(fields: [user_id], references: [id])
+  chat Chat[]
+  user User?  @relation(fields: [user_id], references: [id])
 
   @@map("instances")
 }

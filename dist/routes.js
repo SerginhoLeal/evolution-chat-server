@@ -87,9 +87,8 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
-    console.log("stringify: ", JSON.stringify(body.data));
-    console.log(body, null, 5);
     if (body.event === "connection.update" && body.data.state === "open") {
+      console.log(body);
       socket.emit("instance_connected", {
         message: "Instance Connected",
         status: true
