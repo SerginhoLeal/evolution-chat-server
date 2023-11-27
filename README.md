@@ -22,32 +22,103 @@
   Command to run the migration:
   - npx prisma migrate dev
 
-## Data
+## Evolution-API
+
 ```js
-  users: [
-    {
-      id: "05abe21d-3049-43f8-a842-5fb2af40d8f1",
-      name: "serginho",
-      number: "553175564133",
-      created_at: "2023-11-24T11:02:11.674Z"
+// types of connections
+{
+  event: 'connection.update',
+  instance: 'whatsapp_instance_sergio',
+  data: {
+    instance: 'whatsapp_instance_sergio',
+    state: 'connecting', // connecting | close | open
+    statusReason: 200
+  },
+  destination: 'https://evolution-chat.onrender.com/api/send-by-whatsapp',
+  date_time: '2023-11-26T16:39:30.356Z',
+  server_url: 'api.whatsapp.laks.net.br',
+  apikey: '7F8C7A7F-13E1-4B4F-B794-43531C50C56E'
+}
+```
+
+```js
+// simple conversation
+{
+  event: 'messages.upsert',
+  instance: 'whatsapp_instance_sergio',
+  data: {
+    key: {
+      remoteJid: '553175564133@s.whatsapp.net',
+      fromMe: true,
+      id: '3AA64AC482E95FF0798F'
     },
-    {
-      id: "5f1aaf98-740a-466f-aaab-2c74dbfc7004",
-      name: "marco",
-      number: "553184106645",
-      created_at: "2023-11-24T11:05:23.660Z"
+    pushName: 'Sergio Leal',
+    message: {
+      conversation: 'Salvei 2'
     },
-    {
-      id: "badd34de-ae07-4c0a-9c68-aaf17f94f32d",
-      name: "laura",
-      number: "553171868572",
-      created_at: "2023-11-24T11:06:44.839Z"
+    messageType: 'conversation',
+    messageTimestamp: 1700835590,
+    owner: 'whatsapp_instance_sergio',
+    source: 'ios'
+  },
+  destination: 'https://evolution-chat.onrender.com/api/webhook',
+  date_time: '2023-11-24T11:19:50.442Z',
+  sender: '553175564133@s.whatsapp.net',
+  server_url: 'api.whatsapp.laks.net.br',
+  apikey: 'E7EE1ADE-1AE5-4A78-8401-A708794F765A'
+}
+```
+
+```js
+// simple conversation
+{
+  event: "messages.upsert",
+  instance: "whatsapp_instance_sergio",
+  data: {
+    key: {
+      remoteJid: "553199668527@s.whatsapp.net",
+      fromMe: true,
+      id: "3EB0E5226B8A631E36A06E"
     },
-    {
-      id: "ecb500ed-4128-4f46-851f-61c0ed43f4f9",
-      name: "luiz",
-      number: "553192363441",
-      created_at: "2023-11-24T11:07:27.806Z"
-    }
-  ]
+    pushName: "Sergio Leal",
+    message: {
+      extendedTextMessage: {
+        text: "é assim que começa",
+        contextInfo: {
+          stanzaId: "2F0C1BF027EBAFBAB650D16D3C685EE1",
+          participant: "553199668527@s.whatsapp.net",
+          quotedMessage: {
+            documentWithCaptionMessage: {
+              message: {
+                documentMessage: {
+                  url: "https://mmg.whatsapp.net/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&mms3=true",
+                  mimetype: "application/zip",
+                  fileSha256: "ye+JnBblLNOsIgkh+egqHx9fIEB6/zNZOjCnEF6rOM8=",
+                  fileLength: "1372777",
+                  pageCount: 0,
+                  mediaKey: "i5I1oPhV9a13ilYrHVFAElG66+I6fzvW3IrEb9DFlvA=",
+                  fileEncSha256: "MBb6rhM9qL/iXnCKDaTHi1LanhVzQWzsUo6byNLOJao=",
+                  directPath: "/v/t62.7119-24/32404363_1742509059601126_1875326626193996169_n.enc?ccb=11-4&oh=01_AdTMIgnjMCM2oT31NWHRi4tBq7m6e50M4oIvJRCBF87aXg&oe=6587ED7F&_nc_sid=5e03e0&_nc_hot=1700828779",
+                  mediaKeyTimestamp: "1700784082",
+                  contactVcard: false,
+                  caption: "Anna Bella project zip.zip"
+                }
+              }
+            }
+          }
+        },
+        inviteLinkGroupTypeV2: "DEFAULT"
+      }
+    },
+    messageType: "extendedTextMessage",
+    messageTimestamp: 1700836715,
+    owner: "whatsapp_instance_sergio",
+    source: "android"
+  },
+  destination: "https://evolution-chat.onrender.com/api/webhook",
+  date_time: "2023-11-24T11:38:35.955Z",
+  sender: "553175564133@s.whatsapp.net",
+  server_url: "api.whatsapp.laks.net.br",
+  apikey: "E7EE1ADE-1AE5-4A78-8401-A708794F765A"
+}
 ```

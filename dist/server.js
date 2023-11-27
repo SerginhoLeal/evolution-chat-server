@@ -94,26 +94,31 @@ var ChatControllers = class {
     const body = request.body;
     console.log("stringify: ", JSON.stringify(body.data));
     console.log(body, null, 5);
-    const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
-    const findUser = await prisma2.user.findMany({
-      where: {
-        OR: [
-          {
-            number: `${verify_data.replace("@s.whatsapp.net", "")}`
-          },
-          {
-            number: `${body.sender.replace("@s.whatsapp.net", "")}`
-          }
-        ]
-      },
-      select: {
-        id: true
-      }
-    });
-    if (findUser.length !== 2)
-      return reply.status(404).send({ message: "Number Not Found" });
-    const sender_format = body.sender.replace("@s.whatsapp.net", "");
+    if (body.event === "connection.update" && body.data.state === "open") {
+      socket.emit("instance_connected", {
+        message: "Instance Connected",
+        status: true
+      });
+    }
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
+      const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
+      const findUser = await prisma2.user.findMany({
+        where: {
+          OR: [
+            {
+              number: `${verify_data.replace("@s.whatsapp.net", "")}`
+            },
+            {
+              number: `${body.sender.replace("@s.whatsapp.net", "")}`
+            }
+          ]
+        },
+        select: {
+          id: true
+        }
+      });
+      if (findUser.length !== 2)
+        return reply.status(404).send({ message: "Number Not Found" });
       const find = await prisma2.chat.findFirst({
         where: {
           OR: [
@@ -138,6 +143,24 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
+      const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
+      const findUser = await prisma2.user.findMany({
+        where: {
+          OR: [
+            {
+              number: `${verify_data.replace("@s.whatsapp.net", "")}`
+            },
+            {
+              number: `${body.sender.replace("@s.whatsapp.net", "")}`
+            }
+          ]
+        },
+        select: {
+          id: true
+        }
+      });
+      if (findUser.length !== 2)
+        return reply.status(404).send({ message: "Number Not Found" });
       const find = await prisma2.chat.findFirst({
         where: {
           OR: [
