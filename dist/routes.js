@@ -76,14 +76,14 @@ var ChatControllers = class {
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
-    const { use_logged_id, target_id, instance_id } = request.query;
-    return await prisma2.chat.create({
+    const { use_logged_id, target_id, instance_id } = request.body;
+    return prisma2.chat.create({
       data: {
         first_member_id: `${use_logged_id}`,
         second_member_id: `${target_id}`,
         instance_id: `${instance_id}`
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(400).end({ error }));
   }
   async send(request, reply) {
     const body = request.body;

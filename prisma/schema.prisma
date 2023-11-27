@@ -16,7 +16,7 @@ model User {
   number     String   @unique
   created_at DateTime @default(now())
 
-  instance      Instance[]
+  instances     Instance[] @relation("user_relation")
   first_member  Chat[]     @relation("first_member")
   second_member Chat[]     @relation("second_member")
 
@@ -28,8 +28,8 @@ model Instance {
   user_id       String
   instance_name String @unique
 
-  chat Chat[]
-  user User?  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  chat Chat[] @relation("instance")
+  user User?  @relation("user_relation", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("instances")
 }
@@ -43,10 +43,11 @@ model Chat {
 
   messages Message[]
 
-  instances     Instance @relation(fields: [instance_id], references: [id], onDelete: Cascade)
-  first_member  User     @relation("first_member", fields: [first_member_id], references: [id])
-  second_member User     @relation("second_member", fields: [second_member_id], references: [id])
+  instance      Instance @relation("instance", fields: [instance_id], references: [id], onDelete: Cascade)
+  first_member  User     @relation("first_member", fields: [first_member_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  second_member User     @relation("second_member", fields: [second_member_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  // @@index([first_member_id, second_member_id, instance_id])
   @@map("chats")
 }
 

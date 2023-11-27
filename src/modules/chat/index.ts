@@ -37,9 +37,9 @@ class ChatControllers {
   };
 
   async create(request: Request, reply: Response) {
-    const { use_logged_id, target_id, instance_id } = request.query;
+    const { use_logged_id, target_id, instance_id } = request.body;
 
-    return await prisma.chat.create({
+    return prisma.chat.create({
       data: {
         first_member_id: `${use_logged_id}`,
         second_member_id: `${target_id}`,
@@ -47,7 +47,7 @@ class ChatControllers {
       }
     })
       .then(success => reply.status(201).json(success))
-      .catch(error => reply.status(404).end({ error }))
+      .catch(error => reply.status(400).end({ error }))
   };
 
   async send(request: Request, reply: Response){
