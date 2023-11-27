@@ -64,7 +64,9 @@ class ChatControllers {
         message: 'Instance Connected',
         status: true
       })
-    }
+    };
+
+    console.log(body);
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;

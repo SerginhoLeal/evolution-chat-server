@@ -67,6 +67,8 @@ var ChatControllers = class {
         status: true
       });
     }
+    ;
+    console.log(body);
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma.user.findMany({

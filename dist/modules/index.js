@@ -103,6 +103,8 @@ var ChatControllers = class {
         status: true
       });
     }
+    ;
+    console.log(body);
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma2.user.findMany({
@@ -209,10 +211,10 @@ var InstanceControllers = class {
       }
     }).then((success) => {
       if (success.length === 0) {
-        return reply.status(201).json({ data: success, message: "Create an Instance" });
+        return reply.status(201).json({ data: success, status: "empty", message: "Create an Instance" });
       }
       ;
-      return reply.status(201).json({ data: success, message: `Returned ${success.length} instances` });
+      return reply.status(201).json({ data: success, status: "data", message: `Returned ${success.length} instances` });
     }).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
