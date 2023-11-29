@@ -29,31 +29,31 @@ var socket = (0, import_socket.io)(`${process.env.SOCKET_PORT}`, { transports: [
 var prisma = new import_client.PrismaClient();
 var ChatControllers = class {
   async find(request, reply) {
-    const { use_logged_id, target_id } = request.query;
-    if (!use_logged_id && !target_id) {
+    const { use_logged_id, contact_id } = request.query;
+    if (!use_logged_id && !contact_id) {
       return reply.status(400).end({ error: "Params empty" });
     }
     return await prisma.chat.findFirst({
       where: {
         OR: [
           {
-            first_member_id: `${target_id}`,
-            second_member_id: `${use_logged_id}`
+            user_id: `${contact_id}`,
+            contact_id: `${use_logged_id}`
           },
           {
-            first_member_id: `${use_logged_id}`,
-            second_member_id: `${target_id}`
+            user_id: `${use_logged_id}`,
+            contact_id: `${contact_id}`
           }
         ]
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
-    const { use_logged_id, target_id, instance_id } = request.body;
+    const { use_logged_id, contact_id, instance_id } = request.body;
     return prisma.chat.create({
       data: {
-        first_member_id: `${use_logged_id}`,
-        second_member_id: `${target_id}`,
+        user_id: `${use_logged_id}`,
+        contact_id: `${contact_id}`,
         instance_id: `${instance_id}`
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(400).end({ error }));
@@ -62,6 +62,7 @@ var ChatControllers = class {
     const body = request.body;
     console.log(body);
     if (body.event === "connection.update" && body.data.state === "open") {
+      console.log("connection.update && open: ", body, 5);
       socket.emit("instance_connected", {
         instance: body.instance,
         message: "Instance Connected",
@@ -70,6 +71,7 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
+      console.log("messages.upsert && extendedTextMessage: ", body, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma.user.findMany({
         where: {
@@ -92,12 +94,12 @@ var ChatControllers = class {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id
             }
           ]
         }
@@ -112,6 +114,7 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
+      console.log("messages.upsert && conversation: ", body, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma.user.findMany({
         where: {
@@ -134,12 +137,12 @@ var ChatControllers = class {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id
             }
           ]
         }

@@ -69,31 +69,31 @@ var socket = (0, import_socket.io)(`${process.env.SOCKET_PORT}`, { transports: [
 var prisma2 = new import_client2.PrismaClient();
 var ChatControllers = class {
   async find(request, reply) {
-    const { use_logged_id, target_id } = request.query;
-    if (!use_logged_id && !target_id) {
+    const { use_logged_id, contact_id } = request.query;
+    if (!use_logged_id && !contact_id) {
       return reply.status(400).end({ error: "Params empty" });
     }
     return await prisma2.chat.findFirst({
       where: {
         OR: [
           {
-            first_member_id: `${target_id}`,
-            second_member_id: `${use_logged_id}`
+            user_id: `${contact_id}`,
+            contact_id: `${use_logged_id}`
           },
           {
-            first_member_id: `${use_logged_id}`,
-            second_member_id: `${target_id}`
+            user_id: `${use_logged_id}`,
+            contact_id: `${contact_id}`
           }
         ]
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
   async create(request, reply) {
-    const { use_logged_id, target_id, instance_id } = request.body;
+    const { use_logged_id, contact_id, instance_id } = request.body;
     return prisma2.chat.create({
       data: {
-        first_member_id: `${use_logged_id}`,
-        second_member_id: `${target_id}`,
+        user_id: `${use_logged_id}`,
+        contact_id: `${contact_id}`,
         instance_id: `${instance_id}`
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(400).end({ error }));
@@ -102,6 +102,7 @@ var ChatControllers = class {
     const body = request.body;
     console.log(body);
     if (body.event === "connection.update" && body.data.state === "open") {
+      console.log("connection.update && open: ", body, 5);
       socket.emit("instance_connected", {
         instance: body.instance,
         message: "Instance Connected",
@@ -110,6 +111,7 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
+      console.log("messages.upsert && extendedTextMessage: ", body, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma2.user.findMany({
         where: {
@@ -132,12 +134,12 @@ var ChatControllers = class {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id
             }
           ]
         }
@@ -152,6 +154,7 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
+      console.log("messages.upsert && conversation: ", body, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
       const findUser = await prisma2.user.findMany({
         where: {
@@ -174,12 +177,12 @@ var ChatControllers = class {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id
             }
           ]
         }
@@ -198,38 +201,71 @@ var ChatControllers = class {
 
 // src/modules/instance.ts
 var import_client3 = require("@prisma/client");
+
+// src/services/index.ts
+var import_axios = __toESM(require("axios"));
+var evolution_api = import_axios.default.create({
+  baseURL: `${process.env.EVOLUTION_API}`,
+  headers: {
+    "Content-Type": "application/json",
+    apikey: `${process.env.API_KEY}`
+  }
+});
+
+// src/modules/instance.ts
 var prisma3 = new import_client3.PrismaClient();
 var InstanceControllers = class {
   async find(request, reply) {
     const { use_logged_id } = request.query;
-    return prisma3.instance.findMany({
+    const instance = await prisma3.instance.findFirst({
       where: {
         user_id: `${use_logged_id}`
       },
       include: {
         chat: {
           include: {
-            second_member: true
+            contact: true
           }
         }
       }
-    }).then((success) => {
-      if (success.length === 0) {
-        return reply.status(201).json({ data: success, status: "empty", message: "Create an Instance" });
-      }
-      ;
-      return reply.status(201).json({ data: success, status: "data", message: `Returned ${success.length} instances` });
-    }).catch((error) => reply.status(404).end({ error }));
+    });
+    return reply.status(201).json({ instance });
   }
   async create(request, reply) {
     const { use_logged_id } = request.query;
     const { instance_name } = request.body;
-    return await prisma3.instance.create({
+    const find_user = await prisma3.user.findFirst({
+      where: {
+        id: `${use_logged_id}`
+      }
+    });
+    const creating_instance = await evolution_api.post("/instance/create", {
+      instanceName: `${instance_name}`,
+      qrcode: true,
+      number: `${find_user?.number}`
+    });
+    if (creating_instance.status !== 201)
+      return reply.status(404).end({ message: "Fail to Create Instance" });
+    evolution_api.post(`/webhook/set/${creating_instance.data.instance.instanceName}`, {
+      url: `${process.env.PRODUCTION_BASE_URL}/api/send-by-whatsapp`,
+      webhook_by_events: false,
+      webhook_base64: false,
+      events: [
+        "QRCODE_UPDATED",
+        "MESSAGES_UPSERT",
+        "MESSAGES_UPDATE",
+        "MESSAGES_DELETE",
+        "SEND_MESSAGE",
+        "CONNECTION_UPDATE",
+        "CALL"
+      ]
+    });
+    return prisma3.instance.create({
       data: {
-        instance_name,
+        instance_name: creating_instance.data.instance.instanceName,
         user_id: `${use_logged_id}`
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+    }).then((data) => reply.status(201).json(creating_instance.data)).catch((error) => reply.status(404).end({ error }));
   }
   async delete(request, reply) {
     const { use_logged_id, instance_id } = request.query;
@@ -242,14 +278,40 @@ var InstanceControllers = class {
   }
 };
 
+// src/modules/contact.ts
+var import_client4 = require("@prisma/client");
+var prisma4 = new import_client4.PrismaClient();
+var ContactControllers = class {
+  async register(request, reply) {
+    const { name, number } = request.body;
+    return await prisma4.contact.create({
+      data: {
+        name: `${name}`,
+        number: `${number}`
+      }
+    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  }
+  async delete(request, reply) {
+    const { use_logged_id } = request.query;
+    return await prisma4.contact.delete({
+      where: {
+        id: `${use_logged_id}`
+      }
+    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  }
+};
+
 // src/routes.ts
 var routes = (0, import_express.Router)();
 var userControllers = new UserControllers();
 var chatControllers = new ChatControllers();
 var instanceControllers = new InstanceControllers();
+var contactControllers = new ContactControllers();
 routes.post("/login-user", userControllers.login);
 routes.post("/create-user", userControllers.register);
 routes.delete("/delete-user", userControllers.delete);
+routes.post("/create-contact", contactControllers.register);
+routes.delete("/delete-contact", contactControllers.delete);
 routes.get("/find-instance", instanceControllers.find);
 routes.post("/create-instance", instanceControllers.create);
 routes.delete("/delete-instance", instanceControllers.delete);
