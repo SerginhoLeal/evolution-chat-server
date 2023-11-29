@@ -55,9 +55,10 @@ class ChatControllers {
     // const body = request.body as BodyMessageConversation;
     // const body = request.body as BodyMessageExtended;
 
-    if (body.event === 'connection.update' && body.data.state === 'open') {
-      console.log('connection.update && open: ', body, 5);
+    console.log("body: ");
+    console.log(body, null, 5);
 
+    if (body.event === 'connection.update' && body.data.state === 'open') {
       socket.emit('instance_connected', {
         instance: body.instance,
         message: 'Instance Connected',
@@ -66,8 +67,6 @@ class ChatControllers {
     };
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
-      // console.log('messages.upsert && extendedTextMessage: ', body, 5);
-      // console.log(body, null, 5);
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
   
       const findUser = await prisma.user.findFirst({
@@ -122,9 +121,6 @@ class ChatControllers {
     };
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'conversation') {
-      console.log('messages.upsert && conversation: ');
-      console.log(body, null, 5);
-
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
   
       const findUser = await prisma.user.findFirst({

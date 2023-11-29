@@ -84,13 +84,13 @@ var InstanceControllers = class {
       webhook_by_events: false,
       webhook_base64: false,
       events: [
-        "QRCODE_UPDATED",
+        // "QRCODE_UPDATED",
         "MESSAGES_UPSERT",
-        "MESSAGES_UPDATE",
+        // "MESSAGES_UPDATE",
         "MESSAGES_DELETE",
         "SEND_MESSAGE",
-        "CONNECTION_UPDATE",
-        "CALL"
+        "CONNECTION_UPDATE"
+        // "CALL"
       ]
     });
     return prisma.instance.create({
