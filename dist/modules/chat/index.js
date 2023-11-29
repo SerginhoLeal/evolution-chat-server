@@ -60,7 +60,6 @@ var ChatControllers = class {
   }
   async send(request, reply) {
     const body = request.body;
-    console.log(body);
     if (body.event === "connection.update" && body.data.state === "open") {
       console.log("connection.update && open: ", body, 5);
       socket.emit("instance_connected", {
@@ -71,9 +70,8 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
-      console.log("messages.upsert && extendedTextMessage: ", body, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
-      const findUser = await prisma.user.findMany({
+      const findUser = await prisma.user.findFirst({
         where: {
           OR: [
             {
@@ -88,20 +86,27 @@ var ChatControllers = class {
           id: true
         }
       });
-      if (findUser.length !== 2)
-        return reply.status(404).send({ message: "Number Not Found" });
-      const find = await prisma.chat.findFirst({
+      const findContact = await prisma.contact.findFirst({
         where: {
           OR: [
             {
-              user_id: findUser[0].id,
-              contact_id: findUser[1].id
+              number: `${verify_data.replace("@s.whatsapp.net", "")}`
             },
             {
-              user_id: findUser[1].id,
-              contact_id: findUser[0].id
+              number: `${body.sender.replace("@s.whatsapp.net", "")}`
             }
           ]
+        },
+        select: {
+          id: true
+        }
+      });
+      if (!findUser && !findContact)
+        return reply.status(404).send({ message: "Number Not Found" });
+      const find = await prisma.chat.findFirst({
+        where: {
+          user_id: findUser?.id,
+          contact_id: findContact?.id
         }
       });
       socket.emit("sendMessage", {
@@ -114,9 +119,10 @@ var ChatControllers = class {
     }
     ;
     if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
-      console.log("messages.upsert && conversation: ", body, 5);
+      console.log("messages.upsert && conversation: ");
+      console.log(body, null, 5);
       const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
-      const findUser = await prisma.user.findMany({
+      const findUser = await prisma.user.findFirst({
         where: {
           OR: [
             {
@@ -131,20 +137,27 @@ var ChatControllers = class {
           id: true
         }
       });
-      if (findUser.length !== 2)
-        return reply.status(404).send({ message: "Number Not Found" });
-      const find = await prisma.chat.findFirst({
+      const findContact = await prisma.contact.findFirst({
         where: {
           OR: [
             {
-              user_id: findUser[0].id,
-              contact_id: findUser[1].id
+              number: `${verify_data.replace("@s.whatsapp.net", "")}`
             },
             {
-              user_id: findUser[1].id,
-              contact_id: findUser[0].id
+              number: `${body.sender.replace("@s.whatsapp.net", "")}`
             }
           ]
+        },
+        select: {
+          id: true
+        }
+      });
+      if (!findUser && !findContact)
+        return reply.status(404).send({ message: "Number Not Found" });
+      const find = await prisma.chat.findFirst({
+        where: {
+          user_id: findUser?.id,
+          contact_id: findContact?.id
         }
       });
       socket.emit("sendMessage", {
