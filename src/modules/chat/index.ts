@@ -12,9 +12,9 @@ const prisma = new PrismaClient();
 
 class ChatControllers {
   async find(request: Request, reply: Response) {
-    const { use_logged_id, target_id } = request.query;
+    const { use_logged_id, contact_id } = request.query;
 
-    if (!use_logged_id && !target_id) {
+    if (!use_logged_id && !contact_id) {
       return reply.status(400).end({ error: 'Params empty' })
     }
 
@@ -22,12 +22,12 @@ class ChatControllers {
       where: {
         OR: [
           {
-            first_member_id: `${target_id}`,
-            second_member_id: `${use_logged_id}`,
+            user_id: `${contact_id}`,
+            contact_id: `${use_logged_id}`,
           },
           {
-            first_member_id: `${use_logged_id}`,
-            second_member_id: `${target_id}`,
+            user_id: `${use_logged_id}`,
+            contact_id: `${contact_id}`,
           }
         ]
       },
@@ -37,12 +37,12 @@ class ChatControllers {
   };
 
   async create(request: Request, reply: Response) {
-    const { use_logged_id, target_id, instance_id } = request.body;
+    const { use_logged_id, contact_id, instance_id } = request.body;
 
     return prisma.chat.create({
       data: {
-        first_member_id: `${use_logged_id}`,
-        second_member_id: `${target_id}`,
+        user_id: `${use_logged_id}`,
+        contact_id: `${contact_id}`,
         instance_id: `${instance_id}`
       }
     })
@@ -60,6 +60,8 @@ class ChatControllers {
     console.log(body);
 
     if (body.event === 'connection.update' && body.data.state === 'open') {
+      console.log('connection.update && open: ', body, 5);
+
       socket.emit('instance_connected', {
         instance: body.instance,
         message: 'Instance Connected',
@@ -68,6 +70,7 @@ class ChatControllers {
     };
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'extendedTextMessage') {
+      console.log('messages.upsert && extendedTextMessage: ', body, 5);
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
   
       const findUser = await prisma.user.findMany({
@@ -92,12 +95,12 @@ class ChatControllers {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id,
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id,
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id,
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id,
             }
           ]
         }
@@ -114,6 +117,7 @@ class ChatControllers {
     };
 
     if(body.event === 'messages.upsert' && body.data.messageType === 'conversation') {
+      console.log('messages.upsert && conversation: ', body, 5);
       const verify_data: string = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
   
       const findUser = await prisma.user.findMany({
@@ -138,26 +142,16 @@ class ChatControllers {
         where: {
           OR: [
             {
-              first_member_id: findUser[0].id,
-              second_member_id: findUser[1].id,
+              user_id: findUser[0].id,
+              contact_id: findUser[1].id,
             },
             {
-              first_member_id: findUser[1].id,
-              second_member_id: findUser[0].id,
+              user_id: findUser[1].id,
+              contact_id: findUser[0].id,
             }
           ]
         }
       });
-
-      // console.log({ find });
-
-      // console.log({
-      //   status: 'conversation',
-      //   room: find?.id,
-      //   number: sender_format,
-      //   name: body.data.pushName,
-      //   message: body.data.message.conversation
-      // });
 
       socket.emit('sendMessage', {
         room: find?.id,

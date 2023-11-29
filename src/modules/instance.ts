@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 
 import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
+import { evolution_api } from '../services';
 
 const prisma = new PrismaClient();
 
@@ -8,38 +10,90 @@ class InstanceControllers {
   async find(request: Request, reply: Response) {
     const { use_logged_id } = request.query;
 
-    return prisma.instance.findMany({
+    const instance = await prisma.instance.findFirst({
       where: {
         user_id: `${use_logged_id}`
       },
       include: {
         chat: {
           include: {
-            second_member: true
+            contact: true
           }
         }
       }
-    })
-      .then(success => {
-        if (success.length === 0) {
-          return reply.status(201).json({ data: success, status: 'empty', message: 'Create an Instance' });
-        };
-        return reply.status(201).json({ data: success, status: 'data', message: `Returned ${success.length} instances` })
-      })
-      .catch(error => reply.status(404).end({ error }))
+    });
+
+    return reply.status(201).json({ instance });
+
+    // if (!instance) return reply.status(404).end();
+
+    // const { data } = await axios.get(`${process.env.EVOLUTION_API}/instance/fetchInstances?instanceName=${instance.instance_name}`, {
+    //   headers: {
+    //   'Content-Type': 'application/json',
+    //     apikey: `${process.env.VITE_API_KEY}`
+    //   }
+    // });
+
+    // if (!data) return reply.status(404).json({ data: null, message: 'Instance not Found' });
+
+    // return reply.status(201).json({ instance });
+
+    // return prisma.instance.findFirst({
+    //   where: {
+    //     user_id: `${use_logged_id}`
+    //   },
+    //   include: {
+    //     chat: {
+    //       include: {
+    //         contact: true
+    //       }
+    //     }
+    //   }
+    // })
+    //   .then(data => reply.status(201).json({ data }))
+    //   .catch(error => reply.status(409).end({ error }))
   };
 
   async create(request: Request, reply: Response) {
     const { use_logged_id } = request.query;
     const { instance_name } = request.body;
 
-    return await prisma.instance.create({
+    const find_user = await prisma.user.findFirst({
+      where: {
+        id: `${use_logged_id}`
+      }
+    });
+
+    const creating_instance = await evolution_api.post('/instance/create', {
+      instanceName: `${instance_name}`,
+      qrcode: true,
+      number: `${find_user?.number}`
+    });
+
+    if (creating_instance.status !== 201) return reply.status(404).end({ message: 'Fail to Create Instance' });
+
+    evolution_api.post(`/webhook/set/${creating_instance.data.instance.instanceName}`, {
+      url: `${process.env.PRODUCTION_BASE_URL}/api/send-by-whatsapp`,
+      webhook_by_events: false,
+      webhook_base64: false,
+      events: [
+        "QRCODE_UPDATED",
+        "MESSAGES_UPSERT",
+        "MESSAGES_UPDATE",
+        "MESSAGES_DELETE",
+        "SEND_MESSAGE",
+        "CONNECTION_UPDATE",
+        "CALL"
+      ]
+    });
+
+    return prisma.instance.create({
       data: {
-        instance_name,
+        instance_name: creating_instance.data.instance.instanceName,
         user_id: `${use_logged_id}`
       }
     })
-      .then(success => reply.status(201).json(success))
+      .then(data => reply.status(201).json(creating_instance.data))
       .catch(error => reply.status(404).end({ error }))
   };
 

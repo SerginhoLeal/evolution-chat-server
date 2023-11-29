@@ -16,38 +16,48 @@ model User {
   number     String   @unique
   created_at DateTime @default(now())
 
-  instances     Instance[] @relation("user_relation")
-  first_member  Chat[]     @relation("first_member")
-  second_member Chat[]     @relation("second_member")
+  instance Instance? // one-to-one
+
+  user Chat[] @relation("user")
 
   @@map("users")
 }
 
 model Instance {
   id            String @id @default(uuid())
-  user_id       String
+  user_id       String @unique
   instance_name String @unique
 
   chat Chat[] @relation("instance")
-  user User?  @relation("user_relation", fields: [user_id], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [user_id], references: [id], onDelete: Cascade) // one-to-one
 
   @@map("instances")
 }
 
+model Contact {
+  id         String   @id @default(cuid())
+  name       String
+  number     String   @unique
+  created_at DateTime @default(now())
+
+  contact Chat[] @relation("contact")
+
+  @@map("contacts")
+}
+
 model Chat {
-  id               String   @id @default(cuid())
-  instance_id      String
-  first_member_id  String
-  second_member_id String
-  created_at       DateTime @default(now())
+  id          String   @id @default(cuid())
+  instance_id String
+  user_id     String // logged user
+  contact_id  String // client id
+  created_at  DateTime @default(now())
 
   messages Message[]
 
-  instance      Instance @relation("instance", fields: [instance_id], references: [id], onDelete: Cascade)
-  first_member  User     @relation("first_member", fields: [first_member_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  second_member User     @relation("second_member", fields: [second_member_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  instance Instance @relation("instance", fields: [instance_id], references: [id], onDelete: Cascade)
+  user     User     @relation("user", fields: [user_id], references: [id])
+  contact  Contact  @relation("contact", fields: [contact_id], references: [id])
 
-  // @@index([first_member_id, second_member_id, instance_id])
   @@map("chats")
 }
 
