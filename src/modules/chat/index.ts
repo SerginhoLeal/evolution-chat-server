@@ -56,7 +56,7 @@ class ChatControllers {
     // const body = request.body as BodyMessageExtended;
 
     console.log("body: ");
-    console.log(body, null, 5);
+    console.log(JSON.stringify(body, null, 5));
 
     if (body.event === 'connection.update' && body.data.state === 'open') {
       socket.emit('instance_connected', {

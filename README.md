@@ -1,4 +1,32 @@
-# evolution-chat-server
+<img src="./assets/evolution.png" width="300"/>
+
+The **[Evolution API](http://doc.evolution-api.com/help-center)** is a completely free project that aims to train small shopkeepers, entrepreneurs and liberal professionals, providing a `WhatsApp™` messaging solution via API.
+
+## curl
+  ```js
+    curl
+    --X POST http://0.0.0.0:0000/api/login-user
+    --H 'Content-Type':'application/json'
+    --D '{"name": "your name", "number": "553100000000"}'
+  ```
+  ```js
+    curl
+    --X POST http://0.0.0.0:0000/api/create-user
+    --H 'Content-Type':'application/json'
+    --D '{"name": "your name", "number": "553100000000"}'
+  ```
+  ```js
+    curl
+    --X DELETE http://0.0.0.0:0000/api/delete-user
+    --H 'Content-Type':'application/json'
+
+  ```
+  ```js
+    curl
+    --X POST http://0.0.0.0:0000/api/create-contact
+    --H 'Content-Type':'application/json'
+    --D '{"name": "your name", "number": "553100000000"}'
+  ```
 
 ## Prisma
   Prisma command line interface installation command:
@@ -22,7 +50,6 @@
   Command to run the migration:
   - npx prisma migrate dev
 
-## Evolution-API
 
 ```js
 // types of connections

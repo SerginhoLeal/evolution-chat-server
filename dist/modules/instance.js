@@ -88,8 +88,8 @@ var InstanceControllers = class {
         "MESSAGES_UPSERT",
         // "MESSAGES_UPDATE",
         "MESSAGES_DELETE",
-        "SEND_MESSAGE",
-        "CONNECTION_UPDATE"
+        "SEND_MESSAGE"
+        // "CONNECTION_UPDATE",
         // "CALL"
       ]
     });
