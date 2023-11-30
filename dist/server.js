@@ -150,6 +150,12 @@ var ChatControllers = class {
           contact_id: findContact?.id
         }
       });
+      console.log({
+        room: find?.id,
+        number: verify_data.replace("@s.whatsapp.net", ""),
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
+      });
       socket.emit("sendMessage", {
         room: find?.id,
         number: verify_data.replace("@s.whatsapp.net", ""),
@@ -198,6 +204,12 @@ var ChatControllers = class {
           user_id: findUser?.id,
           contact_id: findContact?.id
         }
+      });
+      console.log({
+        room: find?.id,
+        number: verify_data.replace("@s.whatsapp.net", ""),
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
       });
       socket.emit("sendMessage", {
         room: find?.id,
@@ -344,7 +356,10 @@ var io = new import_socket2.Server(express_server, {
 });
 var users = [];
 io.on("connection", (socket2) => {
-  socket2.on("on_join_room", ({ room }) => socket2.join(room));
+  socket2.on("on_join_room", ({ room }) => {
+    console.log(room);
+    socket2.join(room);
+  });
   socket2.on("sendMessage", (data) => {
     console.log(data);
     io.to(data.room).emit("chat_message", {

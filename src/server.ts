@@ -35,7 +35,11 @@ io.on("connection", (socket) => {
   //   io.emit('get_online_users', users);
   // });
 
-  socket.on("on_join_room", ({ room }) => socket.join(room));
+  socket.on("on_join_room", ({ room }) => {
+    console.log(room);
+
+    socket.join(room)
+  });
   // socket.broadcast
   //   .to(room)
   //   .emit("message", {

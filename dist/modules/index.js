@@ -157,6 +157,12 @@ var ChatControllers = class {
           contact_id: findContact?.id
         }
       });
+      console.log({
+        room: find?.id,
+        number: verify_data.replace("@s.whatsapp.net", ""),
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
+      });
       socket.emit("sendMessage", {
         room: find?.id,
         number: verify_data.replace("@s.whatsapp.net", ""),
@@ -205,6 +211,12 @@ var ChatControllers = class {
           user_id: findUser?.id,
           contact_id: findContact?.id
         }
+      });
+      console.log({
+        room: find?.id,
+        number: verify_data.replace("@s.whatsapp.net", ""),
+        name: body.data.pushName,
+        message: body.data.message.extendedTextMessage.text
       });
       socket.emit("sendMessage", {
         room: find?.id,
