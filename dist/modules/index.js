@@ -216,7 +216,7 @@ var ChatControllers = class {
         room: find?.id,
         number: verify_data.replace("@s.whatsapp.net", ""),
         name: body.data.pushName,
-        message: body.data.message.extendedTextMessage.text
+        message: body.data.message.conversation
       });
       socket.emit("sendMessage", {
         room: find?.id,
