@@ -16,7 +16,7 @@ export default (request: Request, reply: Response, next: NextFunction ) => {
   try {
     const payload: any = jwt.verify(token, PRIVATE);
 
-    request.id = '70d8d7fa-5b94-4925-909d-ce8fbab85893';
+    request.id = payload.id;
 
     return next();
   } catch (e: any) {

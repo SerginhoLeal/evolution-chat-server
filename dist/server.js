@@ -328,7 +328,7 @@ var middleware_default = (request, reply, next) => {
   const [, token] = authorization.split(" ");
   try {
     const payload = import_jsonwebtoken2.default.verify(token, PRIVATE);
-    request.id = "70d8d7fa-5b94-4925-909d-ce8fbab85893";
+    request.id = payload.id;
     return next();
   } catch (e) {
     return reply.status(401).send("token_invalid");
