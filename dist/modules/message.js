@@ -58,7 +58,7 @@ var evolution_api = import_axios.default.create({
 });
 
 // src/modules/message.ts
-var socket = (0, import_socket.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
+var socket = (0, import_socket.io)(`${process.env.PRODUCTION_BASE_URL}`, { transports: ["websocket"] });
 var MessagesControllers = class {
   async index(request, reply) {
     const { room_id } = request.query;

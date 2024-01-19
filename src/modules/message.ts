@@ -7,7 +7,7 @@ interface RequestProps extends Request {
   id?: string;
 }
 
-const socket = client(`${process.env.BASE_URL}`, { transports: ['websocket'] })
+const socket = client(`${process.env.PRODUCTION_BASE_URL}`, { transports: ['websocket'] })
 
 interface TypeConversation {
   "event": "messages.upsert",
