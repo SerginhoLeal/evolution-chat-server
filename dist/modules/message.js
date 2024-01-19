@@ -124,25 +124,7 @@ var MessagesControllers = class {
   //   console.log(JSON.stringify(request.body, null, 5));
   // }
   async message_by_whatsapp(request, reply) {
-    const body = request.body;
-    console.log("entrou");
-    console.log(body);
-    if (body.data.messageType === "conversation" && body.data.message.conversation) {
-      console.log("entrou");
-      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
-      const data = {
-        room_id: `${body.instance}`,
-        name: `${body.data.pushName}`,
-        number: `${contact}`,
-        message_type: "text",
-        file: null,
-        message: `${body.data.message.conversation}`
-      };
-      const result = await prisma.message.create({ data });
-      console.log(result);
-      socket.emit("send_message", data);
-      return reply.status(201).json(result);
-    }
+    console.log(JSON.stringify(request.body, null, 5));
     return reply.status(404).json({ message: "not found" });
   }
 };

@@ -127,31 +127,31 @@ class MessagesControllers {
   //   console.log(JSON.stringify(request.body, null, 5));
   // }
   async message_by_whatsapp(request: RequestProps, reply: Response) {
-    const body: TypeConversation = request.body;
-    console.log('entrou');
-    console.log(body);
+    console.log(JSON.stringify(request.body, null, 5));
+    
+    // const body: TypeConversation = request.body;
 
-    if (body.data.messageType === 'conversation' && body.data.message.conversation) {
-      console.log('entrou');
-      const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
+    // if (body.data.messageType === 'conversation' && body.data.message.conversation) {
+    //   console.log('entrou');
+    //   const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
 
-      const data = {
-        room_id: `${body.instance}`,
-        name: `${body.data.pushName}`,
-        number: `${contact}`,
-        message_type: 'text',
-        file: null,
-        message: `${body.data.message.conversation}`,
-      }
+    //   const data = {
+    //     room_id: `${body.instance}`,
+    //     name: `${body.data.pushName}`,
+    //     number: `${contact}`,
+    //     message_type: 'text',
+    //     file: null,
+    //     message: `${body.data.message.conversation}`,
+    //   }
 
-      const result = await prisma.message.create({ data });
+    //   const result = await prisma.message.create({ data });
 
-      console.log(result);
+    //   console.log(result);
 
-      socket.emit('send_message', data);
+    //   socket.emit('send_message', data);
 
-      return reply.status(201).json(result);
-    }
+    //   return reply.status(201).json(result);
+    // }
 
     return reply.status(404).json({ message: 'not found' });
   }
