@@ -27,17 +27,13 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/modules/index.ts
-var modules_exports = {};
-__export(modules_exports, {
-  FriendControllers: () => FriendControllers,
-  MessagesControllers: () => MessagesControllers,
-  UserControllers: () => UserControllers
+// src/modules/message.ts
+var message_exports = {};
+__export(message_exports, {
+  MessagesControllers: () => MessagesControllers
 });
-module.exports = __toCommonJS(modules_exports);
-
-// src/modules/user.ts
-var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
+module.exports = __toCommonJS(message_exports);
+var import_socket = require("socket.io-client");
 
 // src/services/prisma.ts
 var import_client = require("@prisma/client");
@@ -61,50 +57,7 @@ var evolution_api = import_axios.default.create({
   }
 });
 
-// src/modules/user.ts
-var UserControllers = class {
-  async login(request, reply) {
-    const { nickname, password } = request.body;
-    const data = await prisma.user.findFirst({
-      where: {
-        nickname: `${nickname}`,
-        password: `${password}`
-      }
-    });
-    if (!data) {
-      return reply.status(404).json({ message: "User does not exist" });
-    }
-    ;
-    const token = import_jsonwebtoken.default.sign(data, "2615948");
-    return reply.cookie("evoToken", token, { maxAge: 86400 }).status(201).json({ data, token });
-  }
-  async register(request, reply) {
-    const { name, nickname, email, password, number, photo } = request.body;
-    return prisma.user.create({
-      data: {
-        name: `${name}`,
-        nickname: `${nickname}`,
-        password: `${password}`,
-        email: `${email}`,
-        number: `${number}`,
-        photo: `${photo}`
-      }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
-  }
-  async put(request, reply) {
-  }
-  async delete(request, reply) {
-    const { use_logged_id } = request.query;
-    return await prisma.user.delete({
-      where: {
-        id: `${use_logged_id}`
-      }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
-  }
-};
-
 // src/modules/message.ts
-var import_socket = require("socket.io-client");
 var socket = (0, import_socket.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
 var MessagesControllers = class {
   async index(request, reply) {
@@ -189,77 +142,7 @@ var MessagesControllers = class {
     return reply.status(404).json({ message: "not found" });
   }
 };
-
-// src/modules/friend.ts
-var FriendControllers = class {
-  async friends(request, reply) {
-    const user_id = request.id;
-    const friend = await prisma.friend.findMany({
-      where: {
-        OR: [
-          { user_id: `${user_id}` },
-          { target_id: `${user_id}` }
-        ]
-      },
-      include: {
-        target: {
-          select: {
-            id: true,
-            nickname: true,
-            photo: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            photo: true
-          }
-        },
-        messages: {
-          take: -1,
-          select: {
-            message: true,
-            message_type: true,
-            created_at: true
-          }
-        }
-      }
-    });
-    return reply.status(201).json(friend);
-  }
-  async friend(request, reply) {
-    const user_id = request.id;
-    const { target_id } = request.query;
-    return prisma.friend.findFirst({
-      where: {
-        OR: [
-          {
-            user_id: `${user_id}`,
-            target_id: `${target_id}`
-          },
-          {
-            user_id: `${target_id}`,
-            target_id: `${user_id}`
-          }
-        ]
-      }
-    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
-  }
-  async create(request, reply) {
-    const user_id = request.id;
-    const { target_id } = request.body;
-    return prisma.friend.create({
-      data: {
-        user_id: `${user_id}`,
-        target_id: `${target_id}`
-      }
-    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
-  }
-};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  FriendControllers,
-  MessagesControllers,
-  UserControllers
+  MessagesControllers
 });

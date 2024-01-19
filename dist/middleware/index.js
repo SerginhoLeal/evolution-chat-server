@@ -27,39 +27,30 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/services/index.ts
-var services_exports = {};
-__export(services_exports, {
-  cloudinary: () => import_cloudinary.default,
-  evolution_api: () => evolution_api,
-  prisma: () => prisma
+// src/middleware/index.ts
+var middleware_exports = {};
+__export(middleware_exports, {
+  PRIVATE: () => PRIVATE,
+  default: () => middleware_default
 });
-module.exports = __toCommonJS(services_exports);
-
-// src/services/prisma.ts
-var import_client = require("@prisma/client");
-var prisma = new import_client.PrismaClient();
-
-// src/services/cloudinary.ts
-var import_cloudinary = __toESM(require("cloudinary"));
-import_cloudinary.default.v2.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_API_KEY,
-  api_secret: process.env.CLOUD_API_SECRET
-});
-
-// src/services/axios.ts
-var import_axios = __toESM(require("axios"));
-var evolution_api = import_axios.default.create({
-  baseURL: `${process.env.EVOLUTION_API}`,
-  headers: {
-    "Content-Type": "application/json",
-    apikey: `${process.env.EVOLUTION_KEY}`
+module.exports = __toCommonJS(middleware_exports);
+var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
+var PRIVATE = "2615948";
+var middleware_default = (request, reply, next) => {
+  const authorization = request.headers.authorization;
+  if (!authorization || !authorization.includes("Bearer")) {
+    return reply.status(401).send("no_token_provided");
   }
-});
+  const [, token] = authorization.split(" ");
+  try {
+    const payload = import_jsonwebtoken.default.verify(token, PRIVATE);
+    request.id = "70d8d7fa-5b94-4925-909d-ce8fbab85893";
+    return next();
+  } catch (e) {
+    return reply.status(401).send("token_invalid");
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  cloudinary,
-  evolution_api,
-  prisma
+  PRIVATE
 });

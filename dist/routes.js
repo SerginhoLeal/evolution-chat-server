@@ -36,26 +36,61 @@ module.exports = __toCommonJS(routes_exports);
 var import_express = require("express");
 
 // src/modules/user.ts
+var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
+
+// src/services/prisma.ts
 var import_client = require("@prisma/client");
 var prisma = new import_client.PrismaClient();
+
+// src/services/cloudinary.ts
+var import_cloudinary = __toESM(require("cloudinary"));
+import_cloudinary.default.v2.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET
+});
+
+// src/services/axios.ts
+var import_axios = __toESM(require("axios"));
+var evolution_api = import_axios.default.create({
+  baseURL: `${process.env.EVOLUTION_API}`,
+  headers: {
+    "Content-Type": "application/json",
+    apikey: `${process.env.EVOLUTION_KEY}`
+  }
+});
+
+// src/modules/user.ts
 var UserControllers = class {
   async login(request, reply) {
-    const { name, number } = request.body;
-    return prisma.user.findFirst({
+    const { nickname, password } = request.body;
+    const data = await prisma.user.findFirst({
       where: {
+        nickname: `${nickname}`,
+        password: `${password}`
+      }
+    });
+    if (!data) {
+      return reply.status(404).json({ message: "User does not exist" });
+    }
+    ;
+    const token = import_jsonwebtoken.default.sign(data, "2615948");
+    return reply.cookie("evoToken", token, { maxAge: 86400 }).status(201).json({ data, token });
+  }
+  async register(request, reply) {
+    const { name, nickname, email, password, number, photo } = request.body;
+    return prisma.user.create({
+      data: {
         name: `${name}`,
-        number: `${number}`
+        nickname: `${nickname}`,
+        password: `${password}`,
+        email: `${email}`,
+        number: `${number}`,
+        photo: `${photo}`
       }
     }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
   }
-  async register(request, reply) {
-    const { name, number } = request.body;
-    return await prisma.user.create({
-      data: {
-        name: `${name}`,
-        number: `${number}`
-      }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  async put(request, reply) {
   }
   async delete(request, reply) {
     const { use_logged_id } = request.query;
@@ -67,286 +102,251 @@ var UserControllers = class {
   }
 };
 
-// src/modules/chat/index.ts
-var import_client2 = require("@prisma/client");
+// src/modules/message.ts
 var import_socket = require("socket.io-client");
-var socket = (0, import_socket.io)(`${process.env.SOCKET_PORT}`, { transports: ["websocket"] });
-var prisma2 = new import_client2.PrismaClient();
-var ChatControllers = class {
-  async find(request, reply) {
-    const { use_logged_id, contact_id } = request.query;
-    if (!use_logged_id && !contact_id) {
-      return reply.status(400).end({ error: "Params empty" });
+var socket = (0, import_socket.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
+var MessagesControllers = class {
+  async index(request, reply) {
+    const { room_id } = request.query;
+    const data = await prisma.message.findMany({
+      where: {
+        room_id: `${room_id}`
+      }
+    });
+    return reply.status(201).json(data);
+  }
+  async messages(request, reply) {
+    const user_id = request.id;
+    const { room_id } = request.query;
+    const { message } = request.body;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: `${user_id}`
+      }
+    });
+    const data = {
+      room_id: `${room_id}`,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: "text",
+      file: null,
+      message: `${message}`
+    };
+    const result = await prisma.message.create({ data });
+    socket.emit("send_message", data);
+    return reply.status(201).json(result);
+  }
+  async messages_media(request, reply) {
+    const user_id = request.id;
+    const element = request.file;
+    const { room_id } = request.query;
+    const { message } = request.body;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: `${user_id}`
+      }
+    });
+    const upload = await import_cloudinary.default.v2.uploader.upload(element.path, {
+      resource_type: `${element.mimetype}`,
+      public_id: `evo/${element.filename}`,
+      overwrite: true
+    });
+    const data = {
+      room_id: `${room_id}`,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: `${element.mimetype}`,
+      file: upload.url,
+      width: `${upload.width}`,
+      height: `${upload.height}`,
+      message: `${message}`
+    };
+    const result = await prisma.message.create({ data });
+    socket.emit("send_message", data);
+    return reply.status(201).json(result);
+  }
+  // set the url to evolution
+  // if (request.body.event === 'connection.update' && request.body.data.state === 'open') {
+  //   console.log(JSON.stringify(request.body, null, 5));
+  // }
+  async message_by_whatsapp(request, reply) {
+    const body = request.body;
+    if (body.data.messageType === "conversation" && body.data.message.conversation) {
+      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+      const data = {
+        room_id: `${body.instance}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: "text",
+        file: null,
+        message: `${body.data.message.conversation}`
+      };
+      const result = await prisma.message.create({ data });
+      socket.emit("send_message", data);
+      return reply.status(201).json(result);
     }
-    return await prisma2.chat.findFirst({
+    return reply.status(404).json({ message: "not found" });
+  }
+};
+
+// src/modules/friend.ts
+var FriendControllers = class {
+  async friends(request, reply) {
+    const user_id = request.id;
+    const friend = await prisma.friend.findMany({
+      where: {
+        OR: [
+          { user_id: `${user_id}` },
+          { target_id: `${user_id}` }
+        ]
+      },
+      include: {
+        target: {
+          select: {
+            id: true,
+            nickname: true,
+            photo: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+            photo: true
+          }
+        },
+        messages: {
+          take: -1,
+          select: {
+            message: true,
+            message_type: true,
+            created_at: true
+          }
+        }
+      }
+    });
+    return reply.status(201).json(friend);
+  }
+  async friend(request, reply) {
+    const user_id = request.id;
+    const { target_id } = request.query;
+    return prisma.friend.findFirst({
       where: {
         OR: [
           {
-            user_id: `${contact_id}`,
-            contact_id: `${use_logged_id}`
+            user_id: `${user_id}`,
+            target_id: `${target_id}`
           },
           {
-            user_id: `${use_logged_id}`,
-            contact_id: `${contact_id}`
+            user_id: `${target_id}`,
+            target_id: `${user_id}`
           }
         ]
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
   }
   async create(request, reply) {
-    const { use_logged_id, contact_id, instance_id } = request.body;
-    return prisma2.chat.create({
+    const user_id = request.id;
+    const { target_id } = request.body;
+    return prisma.friend.create({
       data: {
-        user_id: `${use_logged_id}`,
-        contact_id: `${contact_id}`,
-        instance_id: `${instance_id}`
+        user_id: `${user_id}`,
+        target_id: `${target_id}`
       }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(400).end({ error }));
-  }
-  async send(request, reply) {
-    const body = request.body;
-    console.log("body: ");
-    console.log(JSON.stringify(body, null, 5));
-    if (body.event === "connection.update" && body.data.state === "open") {
-      socket.emit("instance_connected", {
-        instance: body.instance,
-        message: "Instance Connected",
-        status: true
-      });
-    }
-    ;
-    if (body.event === "messages.upsert" && body.data.messageType === "extendedTextMessage") {
-      const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
-      const findUser = await prisma2.user.findFirst({
-        where: {
-          OR: [
-            {
-              number: `${verify_data.replace("@s.whatsapp.net", "")}`
-            },
-            {
-              number: `${body.sender.replace("@s.whatsapp.net", "")}`
-            }
-          ]
-        },
-        select: {
-          id: true
-        }
-      });
-      const findContact = await prisma2.contact.findFirst({
-        where: {
-          OR: [
-            {
-              number: `${verify_data.replace("@s.whatsapp.net", "")}`
-            },
-            {
-              number: `${body.sender.replace("@s.whatsapp.net", "")}`
-            }
-          ]
-        },
-        select: {
-          id: true
-        }
-      });
-      if (!findUser && !findContact)
-        return reply.status(404).send({ message: "Number Not Found" });
-      const find = await prisma2.chat.findFirst({
-        where: {
-          user_id: findUser?.id,
-          contact_id: findContact?.id
-        }
-      });
-      console.log({
-        room: find?.id,
-        number: verify_data.replace("@s.whatsapp.net", ""),
-        name: body.data.pushName,
-        message: body.data.message.extendedTextMessage.text
-      });
-      socket.emit("sendMessage", {
-        room: find?.id,
-        number: verify_data.replace("@s.whatsapp.net", ""),
-        name: body.data.pushName,
-        message: body.data.message.extendedTextMessage.text
-      });
-      return reply.status(201).send({ message: "sender" });
-    }
-    ;
-    if (body.event === "messages.upsert" && body.data.messageType === "conversation") {
-      const verify_data = body.data?.remoteJid ? body.data?.remoteJid : body.data.key.remoteJid;
-      const findUser = await prisma2.user.findFirst({
-        where: {
-          OR: [
-            {
-              number: `${verify_data.replace("@s.whatsapp.net", "")}`
-            },
-            {
-              number: `${body.sender.replace("@s.whatsapp.net", "")}`
-            }
-          ]
-        },
-        select: {
-          id: true
-        }
-      });
-      const findContact = await prisma2.contact.findFirst({
-        where: {
-          OR: [
-            {
-              number: `${verify_data.replace("@s.whatsapp.net", "")}`
-            },
-            {
-              number: `${body.sender.replace("@s.whatsapp.net", "")}`
-            }
-          ]
-        },
-        select: {
-          id: true
-        }
-      });
-      if (!findUser && !findContact)
-        return reply.status(404).send({ message: "Number Not Found" });
-      const find = await prisma2.chat.findFirst({
-        where: {
-          user_id: findUser?.id,
-          contact_id: findContact?.id
-        }
-      });
-      console.log({
-        room: find?.id,
-        number: verify_data.replace("@s.whatsapp.net", ""),
-        name: body.data.pushName,
-        message: body.data.message.conversation
-      });
-      socket.emit("sendMessage", {
-        room: find?.id,
-        number: verify_data.replace("@s.whatsapp.net", ""),
-        name: body.data.pushName,
-        message: body.data.message.conversation
-      });
-      return reply.status(201).send({ message: "sender" });
-    }
-    ;
+    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
   }
 };
 
-// src/modules/instance.ts
-var import_client3 = require("@prisma/client");
-
-// src/services/index.ts
-var import_axios = __toESM(require("axios"));
-var evolution_api = import_axios.default.create({
-  baseURL: `${process.env.EVOLUTION_API}`,
-  headers: {
-    "Content-Type": "application/json",
-    apikey: `${process.env.API_KEY}`
+// src/utils/multer.ts
+var import_multer = __toESM(require("multer"));
+var import_path = __toESM(require("path"));
+var import_node_crypto = __toESM(require("crypto"));
+var storageTypes = {
+  local: import_multer.default.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, import_path.default.resolve(__dirname, "..", "..", "tmp", "uploads"));
+    },
+    filename: (req, file, cb) => {
+      import_node_crypto.default.randomBytes(16, (err, hash) => {
+        if (err)
+          cb(err);
+        file.key = `${hash.toString("hex")}-${file.originalname}`;
+        cb(null, file.key);
+      });
+    }
+  }),
+  cloud: import_multer.default.diskStorage({
+    filename: (req, file, cb) => {
+      import_node_crypto.default.randomBytes(16, (err, hash) => {
+        if (err)
+          cb(err);
+        file.key = `${hash.toString("hex")}`;
+        file.mimetype = file.mimetype.slice(0, 5);
+        cb(null, file.key);
+      });
+    }
+  })
+};
+var multer_default = (0, import_multer.default)({
+  // dest: path.resolve(__dirname, "..", "..", "tmp", "uploads"),
+  storage: storageTypes["cloud"],
+  limits: {
+    fileSize: 1e3 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      "image/jpeg",
+      "image/pjpeg",
+      "image/png",
+      "image/gif",
+      "image/jpg",
+      "image/webp",
+      "video/mp4",
+      "video/webm"
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type."));
+    }
   }
 });
 
-// src/modules/instance.ts
-var prisma3 = new import_client3.PrismaClient();
-var InstanceControllers = class {
-  async find(request, reply) {
-    const { use_logged_id } = request.query;
-    const instance = await prisma3.instance.findFirst({
-      where: {
-        user_id: `${use_logged_id}`
-      },
-      include: {
-        chat: {
-          include: {
-            contact: true
-          }
-        }
-      }
-    });
-    return reply.status(201).json({ instance });
+// src/middleware/index.ts
+var import_jsonwebtoken2 = __toESM(require("jsonwebtoken"));
+var PRIVATE = "2615948";
+var middleware_default = (request, reply, next) => {
+  const authorization = request.headers.authorization;
+  if (!authorization || !authorization.includes("Bearer")) {
+    return reply.status(401).send("no_token_provided");
   }
-  async create(request, reply) {
-    const { use_logged_id } = request.query;
-    const { instance_name } = request.body;
-    const find_user = await prisma3.user.findFirst({
-      where: {
-        id: `${use_logged_id}`
-      }
-    });
-    const creating_instance = await evolution_api.post("/instance/create", {
-      instanceName: `${instance_name}`,
-      qrcode: true,
-      number: `${find_user?.number}`
-    });
-    if (creating_instance.status !== 201)
-      return reply.status(404).end({ message: "Fail to Create Instance" });
-    evolution_api.post(`/webhook/set/${creating_instance.data.instance.instanceName}`, {
-      url: `${process.env.PRODUCTION_BASE_URL}/api/send-by-whatsapp`,
-      webhook_by_events: false,
-      webhook_base64: false,
-      events: [
-        // "QRCODE_UPDATED",
-        "MESSAGES_UPSERT",
-        // "MESSAGES_UPDATE",
-        "MESSAGES_DELETE",
-        "SEND_MESSAGE"
-        // "CONNECTION_UPDATE",
-        // "CALL"
-      ]
-    });
-    return prisma3.instance.create({
-      data: {
-        instance_name: creating_instance.data.instance.instanceName,
-        user_id: `${use_logged_id}`
-      }
-    }).then((data) => reply.status(201).json(creating_instance.data)).catch((error) => reply.status(404).end({ error }));
-  }
-  async delete(request, reply) {
-    const { use_logged_id, instance_id } = request.query;
-    return await prisma3.instance.delete({
-      where: {
-        id: `${instance_id}`,
-        user_id: `${use_logged_id}`
-      }
-    }).then((success) => reply.status(201).json({ message: `instance ${success.instance_name} deleted` })).catch((error) => reply.status(404).end({ error }));
-  }
-};
-
-// src/modules/contact.ts
-var import_client4 = require("@prisma/client");
-var prisma4 = new import_client4.PrismaClient();
-var ContactControllers = class {
-  async register(request, reply) {
-    const { name, number } = request.body;
-    return await prisma4.contact.create({
-      data: {
-        name: `${name}`,
-        number: `${number}`
-      }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
-  }
-  async delete(request, reply) {
-    const { use_logged_id } = request.query;
-    return await prisma4.contact.delete({
-      where: {
-        id: `${use_logged_id}`
-      }
-    }).then((success) => reply.status(201).json(success)).catch((error) => reply.status(404).end({ error }));
+  const [, token] = authorization.split(" ");
+  try {
+    const payload = import_jsonwebtoken2.default.verify(token, PRIVATE);
+    request.id = "70d8d7fa-5b94-4925-909d-ce8fbab85893";
+    return next();
+  } catch (e) {
+    return reply.status(401).send("token_invalid");
   }
 };
 
 // src/routes.ts
 var routes = (0, import_express.Router)();
 var userControllers = new UserControllers();
-var chatControllers = new ChatControllers();
-var instanceControllers = new InstanceControllers();
-var contactControllers = new ContactControllers();
+var friendControllers = new FriendControllers();
+var messagesControllers = new MessagesControllers();
+var storage = multer_default.single("file");
 routes.post("/login-user", userControllers.login);
 routes.post("/create-user", userControllers.register);
+routes.use(middleware_default);
 routes.delete("/delete-user", userControllers.delete);
-routes.post("/create-contact", contactControllers.register);
-routes.delete("/delete-contact", contactControllers.delete);
-// routes.get("/find-instance", instanceControllers.find);
-routes.post("/create-instance", instanceControllers.create);
-routes.delete("/delete-instance", instanceControllers.delete);
-routes.get("/find-chat", chatControllers.find);
-routes.post("/create-chat", chatControllers.create);
-routes.post("/send-by-whatsapp", chatControllers.send);
+routes.get("/friends", friendControllers.friends);
+routes.get("/friend", friendControllers.friend);
+routes.post("/create", friendControllers.create);
+routes.get("/messages-whatsapp", messagesControllers.index);
+routes.post("/message-whatsapp", messagesControllers.messages);
+routes.post("/message-media-whatsapp", storage, messagesControllers.messages_media);
+routes.post("/message-by-whatsapp", messagesControllers.message_by_whatsapp);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   routes

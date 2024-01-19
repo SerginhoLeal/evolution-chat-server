@@ -27,14 +27,12 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/services/index.ts
-var services_exports = {};
-__export(services_exports, {
-  cloudinary: () => import_cloudinary.default,
-  evolution_api: () => evolution_api,
-  prisma: () => prisma
+// src/modules/friend.ts
+var friend_exports = {};
+__export(friend_exports, {
+  FriendControllers: () => FriendControllers
 });
-module.exports = __toCommonJS(services_exports);
+module.exports = __toCommonJS(friend_exports);
 
 // src/services/prisma.ts
 var import_client = require("@prisma/client");
@@ -57,9 +55,75 @@ var evolution_api = import_axios.default.create({
     apikey: `${process.env.EVOLUTION_KEY}`
   }
 });
+
+// src/modules/friend.ts
+var FriendControllers = class {
+  async friends(request, reply) {
+    const user_id = request.id;
+    const friend = await prisma.friend.findMany({
+      where: {
+        OR: [
+          { user_id: `${user_id}` },
+          { target_id: `${user_id}` }
+        ]
+      },
+      include: {
+        target: {
+          select: {
+            id: true,
+            nickname: true,
+            photo: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+            photo: true
+          }
+        },
+        messages: {
+          take: -1,
+          select: {
+            message: true,
+            message_type: true,
+            created_at: true
+          }
+        }
+      }
+    });
+    return reply.status(201).json(friend);
+  }
+  async friend(request, reply) {
+    const user_id = request.id;
+    const { target_id } = request.query;
+    return prisma.friend.findFirst({
+      where: {
+        OR: [
+          {
+            user_id: `${user_id}`,
+            target_id: `${target_id}`
+          },
+          {
+            user_id: `${target_id}`,
+            target_id: `${user_id}`
+          }
+        ]
+      }
+    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
+  }
+  async create(request, reply) {
+    const user_id = request.id;
+    const { target_id } = request.body;
+    return prisma.friend.create({
+      data: {
+        user_id: `${user_id}`,
+        target_id: `${target_id}`
+      }
+    }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  cloudinary,
-  evolution_api,
-  prisma
+  FriendControllers
 });

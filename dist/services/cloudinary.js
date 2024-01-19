@@ -27,39 +27,19 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/services/index.ts
-var services_exports = {};
-__export(services_exports, {
-  cloudinary: () => import_cloudinary.default,
-  evolution_api: () => evolution_api,
-  prisma: () => prisma
-});
-module.exports = __toCommonJS(services_exports);
-
-// src/services/prisma.ts
-var import_client = require("@prisma/client");
-var prisma = new import_client.PrismaClient();
-
 // src/services/cloudinary.ts
+var cloudinary_exports = {};
+__export(cloudinary_exports, {
+  cloudinary: () => import_cloudinary.default
+});
+module.exports = __toCommonJS(cloudinary_exports);
 var import_cloudinary = __toESM(require("cloudinary"));
 import_cloudinary.default.v2.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_SECRET
 });
-
-// src/services/axios.ts
-var import_axios = __toESM(require("axios"));
-var evolution_api = import_axios.default.create({
-  baseURL: `${process.env.EVOLUTION_API}`,
-  headers: {
-    "Content-Type": "application/json",
-    apikey: `${process.env.EVOLUTION_KEY}`
-  }
-});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  cloudinary,
-  evolution_api,
-  prisma
+  cloudinary
 });
