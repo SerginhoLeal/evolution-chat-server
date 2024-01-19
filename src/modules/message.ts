@@ -128,8 +128,11 @@ class MessagesControllers {
   // }
   async message_by_whatsapp(request: RequestProps, reply: Response) {
     const body: TypeConversation = request.body;
+    console.log('entrou');
+    console.log(body);
 
     if (body.data.messageType === 'conversation' && body.data.message.conversation) {
+      console.log('entrou');
       const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
 
       const data = {
@@ -142,6 +145,8 @@ class MessagesControllers {
       }
 
       const result = await prisma.message.create({ data });
+
+      console.log(result);
 
       socket.emit('send_message', data);
 
