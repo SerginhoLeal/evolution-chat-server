@@ -1,0 +1,21 @@
+{
+  "files.exclude":{
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+
+    // ".env": true,
+    ".env.test": true,
+    // "yarn.lock": true,
+    "LICENSE": true,
+    ".gitignore": true,
+    ".editorconfig": true,
+  },
+  "cSpell.words": [
+    "enviroment",
+    "fastify"
+  ]
+}

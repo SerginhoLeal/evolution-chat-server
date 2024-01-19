@@ -6,67 +6,73 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  number     String   @unique
+  id       String @id @default(uuid())
+  name     String
+  nickname String @unique
+  password String
+  email    String
+  number   String @unique
+  photo    String
+
+  user   Friend[] @relation("friend")
+  target Friend[] @relation("target")
+
   created_at DateTime @default(now())
-
-  instance Instance? // one-to-one
-
-  user Chat[] @relation("user")
 
   @@map("users")
 }
 
-model Instance {
-  id            String @id @default(uuid())
-  user_id       String @unique
-  instance_name String @unique
+// Friend is a friend list
+model Friend {
+  id         String  @id @default(cuid())
+  user_id    String
+  target_id  String
+  message_id String?
 
-  chat Chat[] @relation("instance")
-  user User   @relation(fields: [user_id], references: [id], onDelete: Cascade) // one-to-one
-
-  @@map("instances")
-}
-
-model Contact {
-  id         String   @id @default(cuid())
-  name       String
-  number     String   @unique
-  created_at DateTime @default(now())
-
-  contact Chat[] @relation("contact")
-
-  @@map("contacts")
-}
-
-model Chat {
-  id          String   @id @default(cuid())
-  instance_id String
-  user_id     String // logged user
-  contact_id  String // client id
-  created_at  DateTime @default(now())
+  user   User @relation("friend", fields: [user_id], references: [id])
+  target User @relation("target", fields: [target_id], references: [id])
 
   messages Message[]
 
-  instance Instance @relation("instance", fields: [instance_id], references: [id], onDelete: Cascade)
-  user     User     @relation("user", fields: [user_id], references: [id])
-  contact  Contact  @relation("contact", fields: [contact_id], references: [id])
-
-  @@map("chats")
+  @@map("friends")
 }
 
-model Message {
-  id         String   @id @default(cuid())
-  chat_id    String
-  created_at DateTime @default(now())
+// model Room {
+//   id         String   @id @default(cuid())
+//   // instance_id String
+//   profile_id String // logged user
+//   // friend_id  String
+//   // contact_id String // client id
+//   created_at DateTime @default(now())
 
-  message Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+//   messages Message[]
+
+//   // profile Profile?  @relation("profile", fields: [profile_id], references: [id])
+//   // room    Profile[] @relation("room")
+//   // friend Profile @relation("friend", fields: [friend_id], references: [id])
+
+//   @@map("rooms")
+// }
+
+model Message {
+  id      String @id @default(cuid())
+  room_id String
+
+  name         String
+  number       String
+  message      String?
+  message_type String
+  file         String?
+  width        String?
+  height       String?
+  created_at   DateTime @default(now())
+
+  room Friend @relation(fields: [room_id], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }

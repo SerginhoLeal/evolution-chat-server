@@ -341,7 +341,7 @@ routes.post("/create-user", userControllers.register);
 routes.delete("/delete-user", userControllers.delete);
 routes.post("/create-contact", contactControllers.register);
 routes.delete("/delete-contact", contactControllers.delete);
-routes.get("/find-instance", instanceControllers.find);
+// routes.get("/find-instance", instanceControllers.find);
 routes.post("/create-instance", instanceControllers.create);
 routes.delete("/delete-instance", instanceControllers.delete);
 routes.get("/find-chat", chatControllers.find);

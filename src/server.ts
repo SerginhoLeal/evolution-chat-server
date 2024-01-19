@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+// import cookie from 'cookie-parser';
 
 import { Server } from "socket.io";
 
@@ -7,14 +8,20 @@ import { routes } from './routes';
 
 const app = express();
 
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cors());
+// app.use(cookie());
+app.use(cors({
+  origin: '*'
+  // origin: 'http://localhost:5173',
+  // credentials: true
+}));
 
 app.use('/api', routes);
 
 const express_server = app.listen(process.env.PORT, () => console.log('Server Running'));
 
-const io = new Server(express_server, {
+export const io = new Server(express_server, {
   cors: {
     origin: '*'
   }
@@ -23,56 +30,27 @@ const io = new Server(express_server, {
 let users: any[] = [];
 
 io.on("connection", (socket) => {
-  // socket.on("add_new_user", ({ id, name, number }) => {
-  //   !users.some(user => user.id === id) &&
-  //   users.push({
-  //     id,
-  //     name,
-  //     number,
-  //     socketId: socket.id
-  //   })
-
-  //   io.emit('get_online_users', users);
-  // });
-
-  socket.on("on_join_room", ({ room }) => {
-    console.log(room);
-
-    socket.join(room)
-  });
-  // socket.broadcast
-  //   .to(room)
-  //   .emit("message", {
-  //     message_id: 0,
-  //     number: '553175564133',
-  //     name: 'Marco',
-  //     message: 'Obrigado pelo contato, logo logo atenderei você, por favor aguarde!'
-  //   });
-
-  // Listen for chatMessage
-  socket.on("sendMessage", (data) => {
-    console.log(data);
-    
-    io.to(data.room).emit("chat_message", {
-      number: data.number,
+  socket.on("users_list", (data) => {
+    !users.some(user => user.number === data.number) &&
+    users.push({
+      id: socket.id,
       name: data.name,
-      message: data.message
+      number: data.number,
     });
+
+    io.emit('users_on', users);
   });
 
-  socket.on("join_instance", (data) => socket.join(data.instance_room));
+  socket.on("on_join_room", (data) => socket.join(data.room));
 
-  socket.on("instance_connected", (data) => {
+  socket.on("send_message", (data) => {
     console.log(data);
-    io.to(data.instance).emit("instance_message", {
-      instance: data.instance,
-      message: data.message,
-      status: data.status
-    });
+
+    io.emit("chat_message", data)
   });
 
   socket.on('disconnect', () => {
-    users = users.filter(users => users.socketId !== socket.id)
-    io.emit('get_online_users', users);
+    users = users.filter(users => users.id !== socket.id)
+    io.emit('users_on', users);
   });
 });
