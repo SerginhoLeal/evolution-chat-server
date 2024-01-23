@@ -17,7 +17,7 @@ CREATE TABLE "friends" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "target_id" TEXT NOT NULL,
-    "message_id" TEXT,
+    "type_chat" TEXT,
 
     CONSTRAINT "friends_pkey" PRIMARY KEY ("id")
 );
