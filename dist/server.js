@@ -582,7 +582,7 @@ var app = (0, import_express2.default)();
 app.use(import_express2.default.urlencoded({ extended: true }));
 app.use(import_express2.default.json());
 app.use((0, import_cors.default)({
-  origin: "http://localhost:5173",
+  origin: "*",
   credentials: true
 }));
 app.use("/api", routes);
