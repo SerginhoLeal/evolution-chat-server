@@ -29,10 +29,10 @@ model User {
 
 // Friend is a friend list
 model Friend {
-  id         String  @id @default(cuid())
-  user_id    String
-  target_id  String
-  message_id String?
+  id        String  @id @default(cuid())
+  user_id   String
+  target_id String
+  type_chat String?
 
   user   User @relation("friend", fields: [user_id], references: [id])
   target User @relation("target", fields: [target_id], references: [id])

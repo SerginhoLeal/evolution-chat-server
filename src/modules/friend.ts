@@ -33,6 +33,7 @@ class FriendControllers {
             id: true,
             nickname: true,
             photo: true,
+            number: true,
           }
         },
         user: {
@@ -40,6 +41,7 @@ class FriendControllers {
             id: true,
             nickname: true,
             photo: true,
+            number: true,
           }
         },
         messages: {
@@ -81,12 +83,13 @@ class FriendControllers {
 
   async create(request: RequestProps, reply: Response) {
     const user_id = request.id;
-    const { target_id } = request.body;
+    const { target_id, type_chat } = request.body;
 
     return prisma.friend.create({
       data: {
         user_id: `${user_id}`,
-        target_id: `${target_id}`
+        target_id: `${target_id}`,
+        type_chat: `${type_chat}`
       }
     })
       .then((data) => reply.status(201).json(data))

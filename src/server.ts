@@ -12,9 +12,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // app.use(cookie());
 app.use(cors({
-  origin: '*'
-  // origin: 'http://localhost:5173',
-  // credentials: true
+  origin: 'http://localhost:5173',
+  credentials: true
 }));
 
 app.use('/api', routes);
@@ -31,11 +30,12 @@ let users: any[] = [];
 
 io.on("connection", (socket) => {
   socket.on("users_list", (data) => {
-    !users.some(user => user.number === data.number) &&
+    // !users.some(user => user.number === data.number) &&
     users.push({
-      id: socket.id,
-      name: data.name,
-      number: data.number,
+      id: data.id,
+      socketId: socket.id,
+      nickname: data.nickname,
+      photo: data.photo,
     });
 
     io.emit('users_on', users);
@@ -43,14 +43,26 @@ io.on("connection", (socket) => {
 
   socket.on("on_join_room", (data) => socket.join(data.room));
 
-  socket.on("send_message", (data) => {
-    console.log(data);
+  socket.on("send_preview_image_or_video", (data) =>
+    io.to(data.room_id).emit("chat_message", data)
+  );
 
-    io.emit("chat_message", data)
-  });
+  socket.on("send_message", (data) => {
+    console.log(data)
+    io.to(data.room_id).emit("chat_message", data)
+  }
+  );
+
+  socket.on("evolution-api-connect", (data) =>
+    io.emit("evolution-response", data)
+  );
+
+  socket.on("evolution-notification-request", (data) =>
+    io.emit("evolution-notification-web", data)
+  );
 
   socket.on('disconnect', () => {
-    users = users.filter(users => users.id !== socket.id)
+    users = users.filter(users => users.socketId !== socket.id)
     io.emit('users_on', users);
   });
 });

@@ -2,46 +2,13 @@ import { Request, Response } from 'express';
 import { io as client } from "socket.io-client";
 
 import { prisma, cloudinary } from '../services';
+import { MessageTypeConversationProps } from '../types';
 
 interface RequestProps extends Request {
   id?: string;
 }
 
-const socket = client(`${process.env.PRODUCTION_BASE_URL}`, { transports: ['websocket'] })
-
-interface TypeConversation {
-  "event": "messages.upsert",
-  "instance": "instance_3_553175564133",
-  "data": {
-    "key": {
-      "remoteJid": "553191819932@s.whatsapp.net",
-      "fromMe": false,
-      "id": "3A6687C4331054C34F0F"
-    },
-    "pushName": "Leila Fernanda",
-    "message": {
-      "conversation": "Eu te amo",
-      "messageContextInfo": {
-        "deviceListMetadata": {
-          "senderTimestamp": "1705675528",
-          "recipientKeyHash": "mlFwLjPVjSGbYQ==",
-          "recipientTimestamp": "1705684155",
-          "recipientKeyIndexes": [107]
-        },
-        "deviceListMetadataVersion": 2
-      }
-    },
-    "messageType": "conversation",
-    "messageTimestamp": 1705684429,
-    "owner": "instance_3_553175564133",
-    "source": "ios"
-  },
-  "destination": "https://1c09-177-55-225-167.ngrok-free.app/api/message-by-whatsapp",
-  "date_time": "2024-01-19T14:13:49.253Z",
-  "sender": "553175564133@s.whatsapp.net",
-  "server_url": "api.whatsapp.laks.net.br",
-  "apikey": "BA6D7E42-ED6C-4182-BF8C-D70F964C2BCB"
-}
+const socket = client(`${process.env.BASE_URL}`, { transports: ['websocket'] })
 
 class MessagesControllers {
   async index(request: RequestProps, reply: Response) {
@@ -74,23 +41,30 @@ class MessagesControllers {
       number: `${user?.number}`,
       message_type: 'text',
       file: null,
+      width: null,
+      height: null,
       message: `${message}`,
     }
 
     const result = await prisma.message.create({ data });
 
     socket.emit('send_message', data);
+    socket.emit('evolution-notification-request', {
+      room_id,
+      isRead: false,
+      data: new Date(),
+    })
 
     return reply.status(201).json(result);
   };
 
   async messages_media(request: RequestProps, reply: Response) {
     const user_id = request.id;
-
+    const { room_id } = request.query;
+    const { message, width, height } = request.body;
     const element = request.file as { path: string, mimetype: 'image' | 'video', filename: string };
 
-    const { room_id } = request.query;
-    const { message } = request.body;
+    const randomId = `${Math.random()} size_image`;
 
     const user = await prisma.user.findFirst({
       where: {
@@ -98,6 +72,16 @@ class MessagesControllers {
       }
     });
 
+    socket.emit('send_preview_image_or_video', {
+      randomId,
+      room_id,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: 'preloading',
+      width,
+      height,
+    });
+    
     const upload: any = await cloudinary.v2.uploader.upload(element.path, {
       resource_type: `${element.mimetype}`,
       public_id: `evo/${element.filename}`,
@@ -117,43 +101,67 @@ class MessagesControllers {
 
     const result = await prisma.message.create({ data });
 
-    socket.emit('send_message', data);
+    socket.emit('send_message', {
+      ...data,
+      randomId
+    });
 
     return reply.status(201).json(result);
   };
 
-  // set the url to evolution
-  // if (request.body.event === 'connection.update' && request.body.data.state === 'open') {
-  //   console.log(JSON.stringify(request.body, null, 5));
-  // }
+  // console.log(JSON.stringify(request.body, null, 5));
+
   async message_by_whatsapp(request: RequestProps, reply: Response) {
-    console.log(JSON.stringify(request.body, null, 5));
-    
-    // const body: TypeConversation = request.body;
+    const body: MessageTypeConversationProps = request.body;
 
-    // if (body.data.messageType === 'conversation' && body.data.message.conversation) {
-    //   console.log('entrou');
-    //   const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
+    // set the url to evolution
+    if (body.event === 'connection.update' && body.data.state === 'open') {
+      console.log(JSON.stringify(request.body, null, 5));
+      // socket.emit('evolution-api-connect', { body });
+    }
 
-    //   const data = {
-    //     room_id: `${body.instance}`,
-    //     name: `${body.data.pushName}`,
-    //     number: `${contact}`,
-    //     message_type: 'text',
-    //     file: null,
-    //     message: `${body.data.message.conversation}`,
-    //   }
+    if (body.data.messageType === 'conversation' && body.data.message.conversation) {
+      const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
 
-    //   const result = await prisma.message.create({ data });
+      const data = {
+        room_id: `${body.instance}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: 'text',
+        file: null,
+        message: `${body.data.message.conversation}`,
+      }
 
-    //   console.log(result);
+      const result = await prisma.message.create({ data });
 
-    //   socket.emit('send_message', data);
+      socket.emit('send_message', data);
 
-    //   return reply.status(201).json(result);
-    // }
+      return reply.status(201).json(result);
+    }
 
-    return reply.status(404).json({ message: 'not found' });
+    return reply.status(201).json(request.body);
+  }
+
+  async media_file(request: RequestProps, reply: Response) {
+    const user_id = request.id;
+    const { room_id } = request.query;
+
+    const result = await prisma.message.findMany({
+      where: {
+        OR: [
+          {
+            room_id: `${room_id}`,
+            message_type: 'image'
+          },
+          {
+            room_id: `${room_id}`,
+            message_type: 'video'
+          },
+        ]
+      }
+    });
+
+    return reply.status(201).json(result);
   }
 };
 
