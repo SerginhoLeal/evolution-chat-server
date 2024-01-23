@@ -583,7 +583,8 @@ app.use(import_express2.default.urlencoded({ extended: true }));
 app.use(import_express2.default.json());
 app.use((0, import_cors.default)({
   origin: "*",
-  credentials: true
+  optionsSuccessStatus: 200,
+  methods: "POST, GET, PUT, DELETE"
 }));
 app.use("/api", routes);
 var express_server = app.listen(process.env.PORT, () => console.log("Server Running"));
