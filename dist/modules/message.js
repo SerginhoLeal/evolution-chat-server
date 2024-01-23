@@ -58,7 +58,7 @@ var evolution_api = import_axios.default.create({
 });
 
 // src/modules/message.ts
-var socket = (0, import_socket.io)(`${process.env.PRODUCTION_BASE_URL}`, { transports: ["websocket"] });
+var socket = (0, import_socket.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
 var MessagesControllers = class {
   async index(request, reply) {
     const { room_id } = request.query;
@@ -84,21 +84,38 @@ var MessagesControllers = class {
       number: `${user?.number}`,
       message_type: "text",
       file: null,
+      width: null,
+      height: null,
       message: `${message}`
     };
     const result = await prisma.message.create({ data });
     socket.emit("send_message", data);
+    socket.emit("evolution-notification-request", {
+      room_id,
+      isRead: false,
+      data: /* @__PURE__ */ new Date()
+    });
     return reply.status(201).json(result);
   }
   async messages_media(request, reply) {
     const user_id = request.id;
-    const element = request.file;
     const { room_id } = request.query;
-    const { message } = request.body;
+    const { message, width, height } = request.body;
+    const element = request.file;
+    const randomId = `${Math.random()} size_image`;
     const user = await prisma.user.findFirst({
       where: {
         id: `${user_id}`
       }
+    });
+    socket.emit("send_preview_image_or_video", {
+      randomId,
+      room_id,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: "preloading",
+      width,
+      height
     });
     const upload = await import_cloudinary.default.v2.uploader.upload(element.path, {
       resource_type: `${element.mimetype}`,
@@ -116,16 +133,52 @@ var MessagesControllers = class {
       message: `${message}`
     };
     const result = await prisma.message.create({ data });
-    socket.emit("send_message", data);
+    socket.emit("send_message", {
+      ...data,
+      randomId
+    });
     return reply.status(201).json(result);
   }
-  // set the url to evolution
-  // if (request.body.event === 'connection.update' && request.body.data.state === 'open') {
-  //   console.log(JSON.stringify(request.body, null, 5));
-  // }
+  // console.log(JSON.stringify(request.body, null, 5));
   async message_by_whatsapp(request, reply) {
-    console.log(JSON.stringify(request.body, null, 5));
-    return reply.status(404).json({ message: "not found" });
+    const body = request.body;
+    if (body.event === "connection.update" && body.data.state === "open") {
+      console.log(JSON.stringify(request.body, null, 5));
+    }
+    if (body.data.messageType === "conversation" && body.data.message.conversation) {
+      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+      const data = {
+        room_id: `${body.instance}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: "text",
+        file: null,
+        message: `${body.data.message.conversation}`
+      };
+      const result = await prisma.message.create({ data });
+      socket.emit("send_message", data);
+      return reply.status(201).json(result);
+    }
+    return reply.status(201).json(request.body);
+  }
+  async media_file(request, reply) {
+    const user_id = request.id;
+    const { room_id } = request.query;
+    const result = await prisma.message.findMany({
+      where: {
+        OR: [
+          {
+            room_id: `${room_id}`,
+            message_type: "image"
+          },
+          {
+            room_id: `${room_id}`,
+            message_type: "video"
+          }
+        ]
+      }
+    });
+    return reply.status(201).json(result);
   }
 };
 // Annotate the CommonJS export names for ESM import in node:

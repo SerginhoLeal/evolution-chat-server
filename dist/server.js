@@ -35,7 +35,7 @@ __export(server_exports, {
 module.exports = __toCommonJS(server_exports);
 var import_express2 = __toESM(require("express"));
 var import_cors = __toESM(require("cors"));
-var import_socket2 = require("socket.io");
+var import_socket3 = require("socket.io");
 
 // src/routes.ts
 var import_express = require("express");
@@ -109,7 +109,7 @@ var UserControllers = class {
 
 // src/modules/message.ts
 var import_socket = require("socket.io-client");
-var socket = (0, import_socket.io)(`${process.env.PRODUCTION_BASE_URL}`, { transports: ["websocket"] });
+var socket = (0, import_socket.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
 var MessagesControllers = class {
   async index(request, reply) {
     const { room_id } = request.query;
@@ -135,21 +135,38 @@ var MessagesControllers = class {
       number: `${user?.number}`,
       message_type: "text",
       file: null,
+      width: null,
+      height: null,
       message: `${message}`
     };
     const result = await prisma.message.create({ data });
     socket.emit("send_message", data);
+    socket.emit("evolution-notification-request", {
+      room_id,
+      isRead: false,
+      data: /* @__PURE__ */ new Date()
+    });
     return reply.status(201).json(result);
   }
   async messages_media(request, reply) {
     const user_id = request.id;
-    const element = request.file;
     const { room_id } = request.query;
-    const { message } = request.body;
+    const { message, width, height } = request.body;
+    const element = request.file;
+    const randomId = `${Math.random()} size_image`;
     const user = await prisma.user.findFirst({
       where: {
         id: `${user_id}`
       }
+    });
+    socket.emit("send_preview_image_or_video", {
+      randomId,
+      room_id,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: "preloading",
+      width,
+      height
     });
     const upload = await import_cloudinary.default.v2.uploader.upload(element.path, {
       resource_type: `${element.mimetype}`,
@@ -167,16 +184,52 @@ var MessagesControllers = class {
       message: `${message}`
     };
     const result = await prisma.message.create({ data });
-    socket.emit("send_message", data);
+    socket.emit("send_message", {
+      ...data,
+      randomId
+    });
     return reply.status(201).json(result);
   }
-  // set the url to evolution
-  // if (request.body.event === 'connection.update' && request.body.data.state === 'open') {
-  //   console.log(JSON.stringify(request.body, null, 5));
-  // }
+  // console.log(JSON.stringify(request.body, null, 5));
   async message_by_whatsapp(request, reply) {
-    console.log(JSON.stringify(request.body, null, 5));
-    return reply.status(404).json({ message: "not found" });
+    const body = request.body;
+    if (body.event === "connection.update" && body.data.state === "open") {
+      console.log(JSON.stringify(request.body, null, 5));
+    }
+    if (body.data.messageType === "conversation" && body.data.message.conversation) {
+      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+      const data = {
+        room_id: `${body.instance}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: "text",
+        file: null,
+        message: `${body.data.message.conversation}`
+      };
+      const result = await prisma.message.create({ data });
+      socket.emit("send_message", data);
+      return reply.status(201).json(result);
+    }
+    return reply.status(201).json(request.body);
+  }
+  async media_file(request, reply) {
+    const user_id = request.id;
+    const { room_id } = request.query;
+    const result = await prisma.message.findMany({
+      where: {
+        OR: [
+          {
+            room_id: `${room_id}`,
+            message_type: "image"
+          },
+          {
+            room_id: `${room_id}`,
+            message_type: "video"
+          }
+        ]
+      }
+    });
+    return reply.status(201).json(result);
   }
 };
 
@@ -196,14 +249,16 @@ var FriendControllers = class {
           select: {
             id: true,
             nickname: true,
-            photo: true
+            photo: true,
+            number: true
           }
         },
         user: {
           select: {
             id: true,
             nickname: true,
-            photo: true
+            photo: true,
+            number: true
           }
         },
         messages: {
@@ -238,13 +293,191 @@ var FriendControllers = class {
   }
   async create(request, reply) {
     const user_id = request.id;
-    const { target_id } = request.body;
+    const { target_id, type_chat } = request.body;
     return prisma.friend.create({
       data: {
         user_id: `${user_id}`,
-        target_id: `${target_id}`
+        target_id: `${target_id}`,
+        type_chat: `${type_chat}`
       }
     }).then((data) => reply.status(201).json(data)).catch((error) => reply.status(400).json(error));
+  }
+};
+
+// src/modules/instance.ts
+var import_socket2 = require("socket.io-client");
+var socket2 = (0, import_socket2.io)(`${process.env.BASE_URL}`, { transports: ["websocket"] });
+var InstanceControllers = class {
+  async connect(request, reply) {
+    const { instance } = request.query;
+    const { data } = await evolution_api.get(`/instance/connect/${instance}`);
+    return reply.status(201).json(data);
+  }
+  async webhook(request, reply) {
+    const body = request.body;
+    if (body.event === "connection.update" && body.data.state === "open") {
+      socket2.emit("evolution-api-connect", {
+        message: `instance ${body.instance} connected`,
+        status: "success",
+        instance_name: body.instance
+      });
+    }
+    if (body.data.messageType === "conversation" && body.data.message.conversation) {
+      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+      const me = body.sender.replace("@s.whatsapp.net", "");
+      const data = await prisma.user.findMany({
+        where: {
+          OR: [
+            { number: `${contact.slice(0, 4)}9${contact.slice(4, 12)}` },
+            { number: `${me.slice(0, 4)}9${me.slice(4, 12)}` }
+          ]
+        }
+      });
+      if (data.length !== 2)
+        return "error";
+      const room = await prisma.friend.findFirst({
+        where: {
+          OR: [
+            {
+              user_id: `${data[0].id}`,
+              target_id: `${data[1].id}`
+            },
+            {
+              user_id: `${data[1].id}`,
+              target_id: `${data[0].id}`
+            }
+          ]
+        }
+      });
+      const constructor = {
+        room_id: `${room?.id}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: "text",
+        file: null,
+        message: `${body.data.message.conversation}`
+      };
+      const result = await prisma.message.create({ data: constructor });
+      socket2.emit("send_message", result);
+      return reply.status(201).json(result);
+    }
+    if (body.data.messageType === "extendedTextMessage" && body.data.message.extendedTextMessage.text) {
+      const contact = body.data.key.remoteJid.replace("@s.whatsapp.net", "");
+      const me = body.sender.replace("@s.whatsapp.net", "");
+      const data = await prisma.user.findMany({
+        where: {
+          OR: [
+            { number: `${contact.slice(0, 4)}9${contact.slice(4, 12)}` },
+            { number: `${me.slice(0, 4)}9${me.slice(4, 12)}` }
+          ]
+        }
+      });
+      if (data.length !== 2)
+        return "error";
+      const room = await prisma.friend.findFirst({
+        where: {
+          OR: [
+            {
+              user_id: `${data[0].id}`,
+              target_id: `${data[1].id}`
+            },
+            {
+              user_id: `${data[1].id}`,
+              target_id: `${data[0].id}`
+            }
+          ]
+        }
+      });
+      const constructor = {
+        room_id: `${room?.id}`,
+        name: `${body.data.pushName}`,
+        number: `${contact}`,
+        message_type: "text",
+        file: null,
+        message: `${body.data.message.extendedTextMessage.text}`
+      };
+      const result = await prisma.message.create({ data: constructor });
+      socket2.emit("send_message", result);
+      return reply.status(201).json(result);
+    }
+    return reply.status(401).json({ message: "no" });
+  }
+  async send_message(request, reply) {
+    const user_id = request.id;
+    const { room_id, instance, number } = request.query;
+    const { message } = request.body;
+    const contact = `${number.slice(0, 4)}${number.slice(5, 13)}`;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: `${user_id}`
+      }
+    });
+    const data = {
+      room_id: `${room_id}`,
+      name: `platform_${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: "text",
+      file: null,
+      width: null,
+      height: null,
+      message: `${message}`
+    };
+    const result = await prisma.message.create({ data });
+    evolution_api.post(`/message/sendText/${instance}`, {
+      number: contact,
+      options: {
+        delay: 1500,
+        presence: "composing",
+        linkPreview: false
+      },
+      textMessage: {
+        text: `${message}`
+      }
+    });
+    socket2.emit("send_message", result);
+    return reply.status(201).json({ message: "success" });
+  }
+  async messages_media(request, reply) {
+    const user_id = request.id;
+    const { room_id } = request.query;
+    const { message, width, height } = request.body;
+    const element = request.file;
+    const randomId = `${Math.random()} size_image`;
+    const user = await prisma.user.findFirst({
+      where: {
+        id: `${user_id}`
+      }
+    });
+    socket2.emit("send_preview_image_or_video", {
+      randomId,
+      room_id,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: "preloading",
+      width,
+      height
+    });
+    const upload = await import_cloudinary.default.v2.uploader.upload(element.path, {
+      resource_type: `${element.mimetype}`,
+      public_id: `evo/${element.filename}`,
+      overwrite: true
+    });
+    const data = {
+      room_id: `${room_id}`,
+      name: `${user?.nickname}`,
+      number: `${user?.number}`,
+      message_type: `${element.mimetype}`,
+      file: upload.url,
+      width: `${upload.width}`,
+      height: `${upload.height}`,
+      message: `${message}`
+    };
+    const result = await prisma.message.create({ data });
+    socket2.emit("send_message", {
+      ...data,
+      randomId
+    });
+    return reply.status(201).json(result);
   }
 };
 
@@ -326,52 +559,72 @@ var routes = (0, import_express.Router)();
 var userControllers = new UserControllers();
 var friendControllers = new FriendControllers();
 var messagesControllers = new MessagesControllers();
+var instanceControllers = new InstanceControllers();
 var storage = multer_default.single("file");
 routes.post("/login-user", userControllers.login);
 routes.post("/create-user", userControllers.register);
+routes.post("/message-by-whatsapp", messagesControllers.message_by_whatsapp);
+routes.get("/instance-connect", instanceControllers.connect);
+routes.post("/instance-webhook", instanceControllers.webhook);
 routes.use(middleware_default);
 routes.delete("/delete-user", userControllers.delete);
 routes.get("/friends", friendControllers.friends);
 routes.get("/friend", friendControllers.friend);
 routes.post("/create", friendControllers.create);
 routes.get("/messages-whatsapp", messagesControllers.index);
+routes.get("/media-file", messagesControllers.media_file);
 routes.post("/message-whatsapp", messagesControllers.messages);
 routes.post("/message-media-whatsapp", storage, messagesControllers.messages_media);
-routes.post("/message-by-whatsapp", messagesControllers.message_by_whatsapp);
+routes.post("/instance-send-message", instanceControllers.send_message);
 
 // src/server.ts
 var app = (0, import_express2.default)();
 app.use(import_express2.default.urlencoded({ extended: true }));
 app.use(import_express2.default.json());
 app.use((0, import_cors.default)({
-  origin: "*"
-  // origin: 'http://localhost:5173',
-  // credentials: true
+  origin: "http://localhost:5173",
+  credentials: true
 }));
 app.use("/api", routes);
 var express_server = app.listen(process.env.PORT, () => console.log("Server Running"));
-var io = new import_socket2.Server(express_server, {
+var io = new import_socket3.Server(express_server, {
   cors: {
     origin: "*"
   }
 });
 var users = [];
-io.on("connection", (socket2) => {
-  socket2.on("users_list", (data) => {
-    !users.some((user) => user.number === data.number) && users.push({
-      id: socket2.id,
-      name: data.name,
-      number: data.number
+io.on("connection", (socket3) => {
+  socket3.on("users_list", (data) => {
+    users.push({
+      id: data.id,
+      socketId: socket3.id,
+      nickname: data.nickname,
+      photo: data.photo
     });
     io.emit("users_on", users);
   });
-  socket2.on("on_join_room", (data) => socket2.join(data.room));
-  socket2.on("send_message", (data) => {
-    console.log(data);
-    io.emit("chat_message", data);
-  });
-  socket2.on("disconnect", () => {
-    users = users.filter((users2) => users2.id !== socket2.id);
+  socket3.on("on_join_room", (data) => socket3.join(data.room));
+  socket3.on(
+    "send_preview_image_or_video",
+    (data) => io.to(data.room_id).emit("chat_message", data)
+  );
+  socket3.on(
+    "send_message",
+    (data) => {
+      console.log(data);
+      io.to(data.room_id).emit("chat_message", data);
+    }
+  );
+  socket3.on(
+    "evolution-api-connect",
+    (data) => io.emit("evolution-response", data)
+  );
+  socket3.on(
+    "evolution-notification-request",
+    (data) => io.emit("evolution-notification-web", data)
+  );
+  socket3.on("disconnect", () => {
+    users = users.filter((users2) => users2.socketId !== socket3.id);
     io.emit("users_on", users);
   });
 });
