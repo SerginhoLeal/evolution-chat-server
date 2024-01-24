@@ -34,17 +34,17 @@ export const io = new Server(express_server, {
 let users: any[] = [];
 
 io.on("connection", (socket) => {
-  socket.on("users_list", (data) => {
-    // !users.some(user => user.number === data.number) &&
-    users.push({
-      id: data.id,
-      socketId: socket.id,
-      nickname: data.nickname,
-      photo: data.photo,
-    });
+  // socket.on("users_list", (data) => {
+  //   // !users.some(user => user.number === data.number) &&
+  //   users.push({
+  //     id: data.id,
+  //     socketId: socket.id,
+  //     nickname: data.nickname,
+  //     photo: data.photo,
+  //   });
 
-    io.emit('users_on', users);
-  });
+  //   io.emit('users_on', users);
+  // });
 
   socket.on("on_join_room", (data) => socket.join(data.room));
 
@@ -66,8 +66,8 @@ io.on("connection", (socket) => {
     io.emit("evolution-notification-web", data)
   );
 
-  socket.on('disconnect', () => {
-    users = users.filter(users => users.socketId !== socket.id)
-    io.emit('users_on', users);
-  });
+  // socket.on('disconnect', () => {
+  //   users = users.filter(users => users.socketId !== socket.id)
+  //   io.emit('users_on', users);
+  // });
 });

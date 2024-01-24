@@ -37,14 +37,14 @@ model Friend {
   user   User @relation("friend", fields: [user_id], references: [id])
   target User @relation("target", fields: [target_id], references: [id])
 
-  messages Message[]
+  messages Message[] @relation("room")
 
   @@map("friends")
 }
 
 model Message {
-  id      String @id @default(cuid())
-  room_id String
+  id      String  @id @default(cuid())
+  room_id String?
 
   name         String
   number       String
@@ -55,7 +55,7 @@ model Message {
   height       String?
   created_at   DateTime @default(now())
 
-  room Friend? @relation(fields: [room_id], references: [id])
+  room Friend? @relation("room", fields: [room_id], references: [id])
 
   @@map("messages")
 }
