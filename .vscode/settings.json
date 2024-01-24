@@ -11,7 +11,7 @@
     ".env.test": true,
     // "yarn.lock": true,
     "LICENSE": true,
-    ".gitignore": true,
+    // ".gitignore": true,
     ".editorconfig": true,
   },
   "cSpell.words": [
