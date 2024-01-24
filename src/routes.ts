@@ -24,8 +24,6 @@ const storage = storageTypes.single('file');
 routes.post('/login-user', userControllers.login);
 routes.post('/create-user', userControllers.register);
 
-routes.post('/message-by-whatsapp', messagesControllers.message_by_whatsapp);
-
 routes.get('/instance-connect', instanceControllers.connect);
 routes.post('/instance-webhook', instanceControllers.webhook);
 
@@ -42,6 +40,6 @@ routes.get('/media-file', messagesControllers.media_file);
 routes.post('/message-whatsapp', messagesControllers.messages);
 routes.post('/message-media-whatsapp', storage, messagesControllers.messages_media);
 
-routes.post('/instance-send-message', instanceControllers.send_message);
+routes.post('/platform-to-whatsapp', instanceControllers.platform_to_whatsapp);
 
 export { routes };

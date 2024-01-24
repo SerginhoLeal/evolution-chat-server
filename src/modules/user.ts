@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import jwt, { sign } from 'jsonwebtoken';
 
 import { prisma } from '../services';
+import { prisma_error } from '../utils';
 
 class UserControllers {
   async login(request: Request, reply: Response) {
@@ -13,7 +14,7 @@ class UserControllers {
         nickname: `${nickname}`,
         password: `${password}`,
       }
-    })
+    });
 
     if (!data) {
       return reply.status(404).json({ message: 'User does not exist' })
@@ -41,7 +42,7 @@ class UserControllers {
       }
     })
       .then(success => reply.status(201).json(success))
-      .catch(error => reply.status(404).end({ error }))
+      .catch(error => reply.status(404).json(prisma_error(error)))
   };
 
   async put(request: Request, reply: Response) {

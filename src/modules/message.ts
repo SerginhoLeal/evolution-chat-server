@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { io as client } from "socket.io-client";
 
 import { prisma, cloudinary } from '../services';
-import { MessageTypeConversationProps } from '../types';
 
 interface RequestProps extends Request {
   id?: string;
@@ -51,7 +50,7 @@ class MessagesControllers {
     socket.emit('send_message', data);
     socket.emit('evolution-notification-request', {
       room_id,
-      isRead: false,
+      isRead: true,
       data: new Date(),
     })
 
@@ -108,39 +107,6 @@ class MessagesControllers {
 
     return reply.status(201).json(result);
   };
-
-  // console.log(JSON.stringify(request.body, null, 5));
-
-  async message_by_whatsapp(request: RequestProps, reply: Response) {
-    const body: MessageTypeConversationProps = request.body;
-
-    // set the url to evolution
-    if (body.event === 'connection.update' && body.data.state === 'open') {
-      console.log(JSON.stringify(request.body, null, 5));
-      // socket.emit('evolution-api-connect', { body });
-    }
-
-    if (body.data.messageType === 'conversation' && body.data.message.conversation) {
-      const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', '');
-
-      const data = {
-        room_id: `${body.instance}`,
-        name: `${body.data.pushName}`,
-        number: `${contact}`,
-        message_type: 'text',
-        file: null,
-        message: `${body.data.message.conversation}`,
-      }
-
-      const result = await prisma.message.create({ data });
-
-      socket.emit('send_message', data);
-
-      return reply.status(201).json(result);
-    }
-
-    return reply.status(201).json(request.body);
-  }
 
   async media_file(request: RequestProps, reply: Response) {
     const user_id = request.id;

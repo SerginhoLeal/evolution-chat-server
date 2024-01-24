@@ -8,6 +8,16 @@ const socket = client(`${process.env.BASE_URL}`, { transports: ['websocket'] });
 
 interface RequestProps extends Request {
   id?: string;
+  query: {
+    room_id: string;
+    instance: string;
+    number: string;
+  },
+  body: MessageTypeExtendedProps & {
+    message: string;
+    width: string;
+    height: string;
+  };
 }
 
 export class InstanceControllers {
@@ -20,7 +30,7 @@ export class InstanceControllers {
   }
 
   async webhook(request: Request, reply: Response) {
-    const body: MessageTypeExtendedProps = request.body;
+    const body = request.body;
 
     // console.log(body);
 
@@ -35,8 +45,6 @@ export class InstanceControllers {
     if (body.data.messageType === 'conversation' && body.data.message.conversation) {
       const contact = body.data.key.remoteJid.replace('@s.whatsapp.net', ''); // who sends
       const me = body.sender.replace('@s.whatsapp.net', ''); // instance phone connected
-
-      // `id-${contact}-${me}`
 
       const data = await prisma.user.findMany({
         where: {
@@ -129,10 +137,10 @@ export class InstanceControllers {
     return reply.status(401).json({ message: 'no' });
   }
 
-  async send_message(request: Request, reply: Response) {
+  async platform_to_whatsapp(request: RequestProps, reply: Response) {
     const user_id = request.id;
 
-    const { room_id, instance, number } = request.query as { room_id: string; instance: string; number: string; };
+    const { room_id, instance, number } = request.query;
     const { message } = request.body;
 
     const contact = `${number.slice(0, 4)}${number.slice(5, 13)}`
@@ -175,8 +183,10 @@ export class InstanceControllers {
 
   async messages_media(request: RequestProps, reply: Response) {
     const user_id = request.id;
+
     const { room_id } = request.query;
     const { message, width, height } = request.body;
+
     const element = request.file as { path: string, mimetype: 'image' | 'video', filename: string };
 
     const randomId = `${Math.random()} size_image`;
