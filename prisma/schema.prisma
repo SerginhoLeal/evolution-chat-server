@@ -37,29 +37,14 @@ model Friend {
   user   User @relation("friend", fields: [user_id], references: [id])
   target User @relation("target", fields: [target_id], references: [id])
 
+  messages Message[]
+
   @@map("friends")
 }
 
-// model Room {
-//   id         String   @id @default(cuid())
-//   // instance_id String
-//   profile_id String // logged user
-//   // friend_id  String
-//   // contact_id String // client id
-//   created_at DateTime @default(now())
-
-//   messages Message[]
-
-//   // profile Profile?  @relation("profile", fields: [profile_id], references: [id])
-//   // room    Profile[] @relation("room")
-//   // friend Profile @relation("friend", fields: [friend_id], references: [id])
-
-//   @@map("rooms")
-// }
-
 model Message {
-  id        String @id @default(cuid())
-  friend_id String
+  id      String @id @default(cuid())
+  room_id String
 
   name         String
   number       String
@@ -69,6 +54,8 @@ model Message {
   width        String?
   height       String?
   created_at   DateTime @default(now())
+
+  room Friend? @relation(fields: [room_id], references: [id])
 
   @@map("messages")
 }
